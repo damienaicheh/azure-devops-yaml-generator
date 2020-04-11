@@ -23,18 +23,44 @@ interface State {
 	runtime: QuickPickItem;
 }
 
-class MyButton implements QuickInputButton {
-	constructor(public iconPath: { light: Uri; dark: Uri; }, public tooltip: string) { }
+class ProjectConfiguration {
+	fileName: string | undefined;
+	technology: Technology | undefined;
+	enableUnitTest: boolean | undefined;
+	enableAppCenter: boolean | undefined;
 }
+
+enum Technology {
+	XamariniOS,
+	XamarinAndroid,
+	XamarinForms,
+	UWP,
+	iOS,
+	Android
+}
+
+export const TechnologyLabel = new Map<Technology, string>([
+	[Technology.XamariniOS, 'Xamarin.iOS'],
+	[Technology.XamarinAndroid, 'Xamarin.Android'],
+	[Technology.XamarinForms, 'Xamarin.Forms'],
+	[Technology.UWP, 'UWP'],
+	[Technology.iOS, 'iOS'],
+	[Technology.Android, 'Android'],
+]);
+
+enum Answer {
+	No,
+	Yes
+}
+
+export const AnswerLabel = new Map<Answer, string>([
+	[Answer.Yes, 'Yes'],
+	[Answer.No, 'No'],
+]);
 
 export async function configureYaml(context: ExtensionContext) {
 
-	const createResourceGroupButton = new MyButton({
-		dark: Uri.file(context.asAbsolutePath('resources/dark/add.svg')),
-		light: Uri.file(context.asAbsolutePath('resources/light/add.svg')),
-	}, 'Select');
-
-	async function chooseFileName(input: MultiStepInput, state: Partial<State>) {
+	async function chooseFileName(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
 		const title = 'Give a name to your yaml pipeline file';
 
 		state.resourceGroup = await input.showInputBox({
@@ -49,14 +75,16 @@ export async function configureYaml(context: ExtensionContext) {
 			return name.endsWith('.yml') ? undefined : 'Make sure your file extension is \'.yml\'';
 		}
 
-		window.showInformationMessage(`You choose: ${state.resourceGroup}`);
+		configuration.fileName = state.resourceGroup;
 
-		return (input: MultiStepInput) => chooseTechnology(input, state);
+		window.showInformationMessage(`You choose: ${configuration.fileName}`);
+
+		return (input: MultiStepInput) => chooseTechnology(configuration, input, state);
 	}
 
-	async function chooseTechnology(input: MultiStepInput, state: Partial<State>) {
+	async function chooseTechnology(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
 
-		const technologies: QuickPickItem[] = ['Xamarin.iOS', 'Xamarin.Android', 'Xamarin.Forms', 'UWP', 'iOS', 'Android']
+		const technologies: QuickPickItem[] = Array.from(TechnologyLabel.values())
 			.sort((a, b) => (a > b ? -1 : 1)).map(label => ({ label }));
 
 		const title = 'Which technology do you use?';
@@ -66,23 +94,27 @@ export async function configureYaml(context: ExtensionContext) {
 			placeholder: '',
 			items: technologies,
 			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
-			buttons: [createResourceGroupButton],
 			shouldResume: shouldResume
 		});
 
-		if (pick instanceof MyButton) {
-			window.showInformationMessage("Button");
-		} else {
-			state.resourceGroup = pick;
-			window.showInformationMessage("Pick");
-		}
+		state.resourceGroup = pick;
 
-		return (input: MultiStepInput) => enableUnitTests(input, state);
+		configuration.technology = getKeyFromValue(TechnologyLabel, pick.label);
+
+		return (input: MultiStepInput) => enableUnitTests(configuration, input, state);
 	}
 
-	async function enableUnitTests(input: MultiStepInput, state: Partial<State>) {
+	function getKeyFromValue<T>(map: Map<T, string>, search: string) {
+		for (let [key, value] of map.entries()) {
+			if (value === search) {
+				return key;
+			}
+		}
+	}
 
-		const answers: QuickPickItem[] = ['Yes', 'No'].map(label => ({ label }));
+	async function enableUnitTests(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
+
+		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
 		const title = 'Do you want to run Unit Tests?';
 
@@ -90,23 +122,20 @@ export async function configureYaml(context: ExtensionContext) {
 			title,
 			items: answers,
 			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
-			buttons: [createResourceGroupButton],
 			shouldResume: shouldResume
 		});
 
-		if (pick instanceof MyButton) {
-			window.showInformationMessage("Button");
-		} else {
-			state.resourceGroup = pick;
-			window.showInformationMessage("Pick");
-			return (input: MultiStepInput) => enableAppCenterDistribution(input, state);
-		}
-		return (input: MultiStepInput) => enableAppCenterDistribution(input, state);
+		state.resourceGroup = pick;
+
+		var answer = getKeyFromValue(AnswerLabel, pick.label);
+		configuration.enableUnitTest = answer === Answer.Yes;
+
+		return (input: MultiStepInput) => enableAppCenterDistribution(configuration, input, state);
 	}
 
-	async function enableAppCenterDistribution(input: MultiStepInput, state: Partial<State>) {
+	async function enableAppCenterDistribution(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
 
-		const answers: QuickPickItem[] = ['Yes', 'No'].map(label => ({ label }));
+		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
 		const title = 'Do you want to distribute it using App Center?';
 
@@ -114,16 +143,14 @@ export async function configureYaml(context: ExtensionContext) {
 			title,
 			items: answers,
 			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
-			buttons: [createResourceGroupButton],
 			shouldResume: shouldResume
 		});
 
-		if (pick instanceof MyButton) {
-			window.showInformationMessage("Button");
-		} else {
-			state.resourceGroup = pick;
-			window.showInformationMessage("Pick");
-		}
+		state.resourceGroup = pick;
+		var answer = getKeyFromValue(AnswerLabel, pick.label);
+		configuration.enableAppCenter = answer === Answer.Yes;
+
+		window.showInformationMessage("Pick");
 	}
 
 	function shouldResume() {
@@ -134,9 +161,10 @@ export async function configureYaml(context: ExtensionContext) {
 	}
 
 	const state = {} as Partial<State>;
-	await MultiStepInput.run(input => chooseFileName(input, state));
+	var configuration = new ProjectConfiguration();
+	await MultiStepInput.run(input => chooseFileName(configuration, input, state));
 
-	console.log(state);
+	console.log(configuration);
 	window.showInformationMessage('Generation done.');
 }
 
