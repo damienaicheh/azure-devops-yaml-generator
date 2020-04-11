@@ -44,6 +44,7 @@
 	},
 	"dependencies": {
 		"fs": "0.0.1-security",
-		"path": "^0.12.7"
+		"path": "^0.12.7",
+		"yaml": "^1.8.3"
 	}
 }

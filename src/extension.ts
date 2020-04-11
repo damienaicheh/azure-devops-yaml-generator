@@ -1,6 +1,7 @@
 import { window, commands, workspace, ExtensionContext, QuickPickItem, Disposable, CancellationToken, QuickInputButton, QuickInput, QuickInputButtons, Uri } from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+const YAML = require('yaml');
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -146,7 +147,24 @@ export async function configureYaml(context: ExtensionContext) {
 		const folderPath = workspace.rootPath ?? '';
 		console.log(folderPath);
 
-		const yamlContent = `# yaml`;
+		const object = {
+			pool: { vmImage: 'macOS-latest' },
+			steps: [{
+				script: 'sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh 6_4_0',
+				displayName: 'Select the Xamarin SDK version',
+				enabled: true,
+			}, {
+				task: 'InstallAppleCertificate@2',
+				inputs: {
+					certSecureFile: '$(p12FileName)',
+					certPwd: '$(p12Password)',
+					keychain: 'temp',
+					deleteCert: true
+				}
+			}],
+		};
+
+		const yamlContent = YAML.stringify(object);
 
 		fs.writeFile(path.join(folderPath, configuration.fileName), yamlContent, err => {
 			if (err) {
