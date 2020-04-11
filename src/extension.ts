@@ -5,19 +5,7 @@ import { window, commands, ExtensionContext, QuickPickItem, Disposable, Cancella
 export function activate(context: ExtensionContext) {
 
 	let disposable = commands.registerCommand('azuredevopsyamlgenerator.helloWorld', async () => {
-
-		const result = await window.showInputBox({
-			value: 'azure-pipelines.yml',
-			placeHolder: 'Give a name to your yaml pipeline file',
-			validateInput: text => {
-				return text.endsWith('.yml') ? null : 'Make sure your file extension is \'.yml\'';
-			}
-		});
-
-		window.showInformationMessage(`You choose: ${result}`);
-
-		const state = {} as Partial<State>;
-		await MultiStepInput.run(input => configureYaml(context, input, state));
+		configureYaml(context);
 	});
 
 	context.subscriptions.push(disposable);
@@ -35,39 +23,88 @@ interface State {
 	runtime: QuickPickItem;
 }
 
-export async function configureYaml(context: ExtensionContext, input: MultiStepInput, state: Partial<State>) {
+class MyButton implements QuickInputButton {
+	constructor(public iconPath: { light: Uri; dark: Uri; }, public tooltip: string) { }
+}
 
-	class MyButton implements QuickInputButton {
-		constructor(public iconPath: { light: Uri; dark: Uri; }, public tooltip: string) { }
-	}
+export async function configureYaml(context: ExtensionContext) {
 
 	const createResourceGroupButton = new MyButton({
 		dark: Uri.file(context.asAbsolutePath('resources/dark/add.svg')),
 		light: Uri.file(context.asAbsolutePath('resources/light/add.svg')),
 	}, 'Create Resource Group');
 
-	const resourceGroups: QuickPickItem[] = ['Xamarin.iOS', 'Xamarin.Android', 'Xamarin.Forms', 'UWP', 'iOS', 'Android']
-		.sort((a, b) => (a > b ? -1 : 1)).map(label => ({ label }));
+	async function chooseFileName(input: MultiStepInput, state: Partial<State>) {
+		const title = 'Give a name to your yaml pipeline file';
 
+		state.resourceGroup = await input.showInputBox({
+			title,
+			step: 0,
+			totalSteps: 0,
+			value: 'azure-pipelines.yml',
+			prompt: 'Give a name to your yaml pipeline file',
+			validate: validateFileName,
+			shouldResume: shouldResume
+		});
 
-	const title = 'Which technology do you use?';
+		async function validateFileName(name: string) {
+			return name.endsWith('.yml') ? undefined : 'Make sure your file extension is \'.yml\'';
+		}
 
-	const pick = await input.showQuickPick({
-		title,
-		step: 1,
-		totalSteps: 3,
-		placeholder: '',
-		items: resourceGroups,
-		activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
-		buttons: [createResourceGroupButton],
-		shouldResume: shouldResume
-	});
-	if (pick instanceof MyButton) {
-		window.showInformationMessage("Button");
-		//return (input: MultiStepInput) => inputResourceGroupName(input, state);
-	} else {
-		state.resourceGroup = pick;
-		window.showInformationMessage("Pick");
+		window.showInformationMessage(`You choose: ${state.resourceGroup}`);
+
+		return (input: MultiStepInput) => chooseTechnology(input, state);
+	}
+
+	async function chooseTechnology(input: MultiStepInput, state: Partial<State>) {
+
+		const resourceGroups: QuickPickItem[] = ['Xamarin.iOS', 'Xamarin.Android', 'Xamarin.Forms', 'UWP', 'iOS', 'Android']
+			.sort((a, b) => (a > b ? -1 : 1)).map(label => ({ label }));
+
+		const title = 'Which technology do you use?';
+
+		const pick = await input.showQuickPick({
+			title,
+			step: 1,
+			totalSteps: 3,
+			placeholder: '',
+			items: resourceGroups,
+			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
+			buttons: [createResourceGroupButton],
+			shouldResume: shouldResume
+		});
+
+		if (pick instanceof MyButton) {
+			window.showInformationMessage("Button");
+		} else {
+			state.resourceGroup = pick;
+			window.showInformationMessage("Pick");
+			return (input: MultiStepInput) => inputResourceGroupName(input, state);
+		}
+		return (input: MultiStepInput) => inputResourceGroupName(input, state);
+	}
+
+	async function inputResourceGroupName(input: MultiStepInput, state: Partial<State>) {
+		window.showInformationMessage("Follow");
+		const title = 'Which technology do you use?';
+
+		state.resourceGroup = await input.showInputBox({
+			title,
+			step: 2,
+			totalSteps: 4,
+			value: typeof state.resourceGroup === 'string' ? state.resourceGroup : '',
+			prompt: 'Choose a unique name for the resource group',
+			validate: validateNameIsUnique,
+			shouldResume: shouldResume
+		});
+
+		async function validateNameIsUnique(name: string) {
+			// ...validate...
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			return name === 'vscode' ? 'Name not unique' : undefined;
+		}
+
+		//return (input: MultiStepInput) => inputName(input, state);
 	}
 
 	function shouldResume() {
@@ -76,6 +113,9 @@ export async function configureYaml(context: ExtensionContext, input: MultiStepI
 
 		});
 	}
+
+	const state = {} as Partial<State>;
+	await MultiStepInput.run(input => chooseFileName(input, state));
 
 	window.showInformationMessage('Generation done.');
 }
