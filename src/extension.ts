@@ -39,8 +39,6 @@ export async function configureYaml(context: ExtensionContext) {
 
 		state.resourceGroup = await input.showInputBox({
 			title,
-			step: 0,
-			totalSteps: 0,
 			value: 'azure-pipelines.yml',
 			prompt: 'Give a name to your yaml pipeline file',
 			validate: validateFileName,
@@ -65,8 +63,6 @@ export async function configureYaml(context: ExtensionContext) {
 
 		const pick = await input.showQuickPick({
 			title,
-			step: 1,
-			totalSteps: 3,
 			placeholder: '',
 			items: resourceGroups,
 			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
@@ -135,24 +131,24 @@ type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
 
 interface QuickPickParameters<T extends QuickPickItem> {
 	title: string;
-	step: number;
-	totalSteps: number;
 	items: T[];
-	activeItem?: T;
 	placeholder: string;
-	buttons?: QuickInputButton[];
 	shouldResume: () => Thenable<boolean>;
+	step?: number;
+	totalSteps?: number;
+	activeItem?: T;
+	buttons?: QuickInputButton[];
 }
 
 interface InputBoxParameters {
 	title: string;
-	step: number;
-	totalSteps: number;
 	value: string;
 	prompt: string;
 	validate: (value: string) => Promise<string | undefined>;
-	buttons?: QuickInputButton[];
 	shouldResume: () => Thenable<boolean>;
+	step?: number;
+	totalSteps?: number;
+	buttons?: QuickInputButton[];
 }
 
 class MultiStepInput {
