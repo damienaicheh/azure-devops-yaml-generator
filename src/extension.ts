@@ -14,15 +14,6 @@ export function activate(context: ExtensionContext) {
 // this method is called when your extension is deactivated
 export function deactivate() { }
 
-interface State {
-	title: string;
-	step: number;
-	totalSteps: number;
-	resourceGroup: QuickPickItem | string;
-	name: string;
-	runtime: QuickPickItem;
-}
-
 class ProjectConfiguration {
 	fileName: string | undefined;
 	technology: Technology | undefined;
@@ -60,10 +51,10 @@ export const AnswerLabel = new Map<Answer, string>([
 
 export async function configureYaml(context: ExtensionContext) {
 
-	async function chooseFileName(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
+	async function chooseFileName(configuration: ProjectConfiguration, input: MultiStepInput) {
 		const title = 'Give a name to your yaml pipeline file';
 
-		state.resourceGroup = await input.showInputBox({
+		configuration.fileName = await input.showInputBox({
 			title,
 			value: 'azure-pipelines.yml',
 			prompt: 'Give a name to your yaml pipeline file',
@@ -75,14 +66,12 @@ export async function configureYaml(context: ExtensionContext) {
 			return name.endsWith('.yml') ? undefined : 'Make sure your file extension is \'.yml\'';
 		}
 
-		configuration.fileName = state.resourceGroup;
-
 		window.showInformationMessage(`You choose: ${configuration.fileName}`);
 
-		return (input: MultiStepInput) => chooseTechnology(configuration, input, state);
+		return (input: MultiStepInput) => chooseTechnology(configuration, input);
 	}
 
-	async function chooseTechnology(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
+	async function chooseTechnology(configuration: ProjectConfiguration, input: MultiStepInput) {
 
 		const technologies: QuickPickItem[] = Array.from(TechnologyLabel.values())
 			.sort((a, b) => (a > b ? -1 : 1)).map(label => ({ label }));
@@ -93,15 +82,12 @@ export async function configureYaml(context: ExtensionContext) {
 			title,
 			placeholder: '',
 			items: technologies,
-			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
 			shouldResume: shouldResume
 		});
 
-		state.resourceGroup = pick;
-
 		configuration.technology = getKeyFromValue(TechnologyLabel, pick.label);
 
-		return (input: MultiStepInput) => enableUnitTests(configuration, input, state);
+		return (input: MultiStepInput) => enableUnitTests(configuration, input);
 	}
 
 	function getKeyFromValue<T>(map: Map<T, string>, search: string) {
@@ -112,7 +98,7 @@ export async function configureYaml(context: ExtensionContext) {
 		}
 	}
 
-	async function enableUnitTests(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
+	async function enableUnitTests(configuration: ProjectConfiguration, input: MultiStepInput) {
 
 		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
@@ -121,19 +107,16 @@ export async function configureYaml(context: ExtensionContext) {
 		const pick = await input.showQuickPick({
 			title,
 			items: answers,
-			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
 			shouldResume: shouldResume
 		});
-
-		state.resourceGroup = pick;
 
 		var answer = getKeyFromValue(AnswerLabel, pick.label);
 		configuration.enableUnitTest = answer === Answer.Yes;
 
-		return (input: MultiStepInput) => enableAppCenterDistribution(configuration, input, state);
+		return (input: MultiStepInput) => enableAppCenterDistribution(configuration, input);
 	}
 
-	async function enableAppCenterDistribution(configuration: ProjectConfiguration, input: MultiStepInput, state: Partial<State>) {
+	async function enableAppCenterDistribution(configuration: ProjectConfiguration, input: MultiStepInput) {
 
 		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
@@ -142,13 +125,10 @@ export async function configureYaml(context: ExtensionContext) {
 		const pick = await input.showQuickPick({
 			title,
 			items: answers,
-			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
 			shouldResume: shouldResume
 		});
 
-		state.resourceGroup = pick;
-		var answer = getKeyFromValue(AnswerLabel, pick.label);
-		configuration.enableAppCenter = answer === Answer.Yes;
+		configuration.enableAppCenter = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
 
 		window.showInformationMessage("Pick");
 	}
@@ -160,9 +140,9 @@ export async function configureYaml(context: ExtensionContext) {
 		});
 	}
 
-	const state = {} as Partial<State>;
+	//const state = {} as Partial<State>;
 	var configuration = new ProjectConfiguration();
-	await MultiStepInput.run(input => chooseFileName(configuration, input, state));
+	await MultiStepInput.run(input => chooseFileName(configuration, input));
 
 	console.log(configuration);
 	window.showInformationMessage('Generation done.');
