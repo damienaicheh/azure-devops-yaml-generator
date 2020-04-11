@@ -32,7 +32,7 @@ export async function configureYaml(context: ExtensionContext) {
 	const createResourceGroupButton = new MyButton({
 		dark: Uri.file(context.asAbsolutePath('resources/dark/add.svg')),
 		light: Uri.file(context.asAbsolutePath('resources/light/add.svg')),
-	}, 'Create Resource Group');
+	}, 'Select');
 
 	async function chooseFileName(input: MultiStepInput, state: Partial<State>) {
 		const title = 'Give a name to your yaml pipeline file';
@@ -56,7 +56,7 @@ export async function configureYaml(context: ExtensionContext) {
 
 	async function chooseTechnology(input: MultiStepInput, state: Partial<State>) {
 
-		const resourceGroups: QuickPickItem[] = ['Xamarin.iOS', 'Xamarin.Android', 'Xamarin.Forms', 'UWP', 'iOS', 'Android']
+		const technologies: QuickPickItem[] = ['Xamarin.iOS', 'Xamarin.Android', 'Xamarin.Forms', 'UWP', 'iOS', 'Android']
 			.sort((a, b) => (a > b ? -1 : 1)).map(label => ({ label }));
 
 		const title = 'Which technology do you use?';
@@ -64,7 +64,7 @@ export async function configureYaml(context: ExtensionContext) {
 		const pick = await input.showQuickPick({
 			title,
 			placeholder: '',
-			items: resourceGroups,
+			items: technologies,
 			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
 			buttons: [createResourceGroupButton],
 			shouldResume: shouldResume
@@ -75,32 +75,55 @@ export async function configureYaml(context: ExtensionContext) {
 		} else {
 			state.resourceGroup = pick;
 			window.showInformationMessage("Pick");
-			return (input: MultiStepInput) => inputResourceGroupName(input, state);
 		}
-		return (input: MultiStepInput) => inputResourceGroupName(input, state);
+
+		return (input: MultiStepInput) => enableUnitTests(input, state);
 	}
 
-	async function inputResourceGroupName(input: MultiStepInput, state: Partial<State>) {
-		window.showInformationMessage("Follow");
-		const title = 'Which technology do you use?';
+	async function enableUnitTests(input: MultiStepInput, state: Partial<State>) {
 
-		state.resourceGroup = await input.showInputBox({
+		const answers: QuickPickItem[] = ['Yes', 'No'].map(label => ({ label }));
+
+		const title = 'Do you want to run Unit Tests?';
+
+		const pick = await input.showQuickPick({
 			title,
-			step: 2,
-			totalSteps: 4,
-			value: typeof state.resourceGroup === 'string' ? state.resourceGroup : '',
-			prompt: 'Choose a unique name for the resource group',
-			validate: validateNameIsUnique,
+			items: answers,
+			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
+			buttons: [createResourceGroupButton],
 			shouldResume: shouldResume
 		});
 
-		async function validateNameIsUnique(name: string) {
-			// ...validate...
-			await new Promise(resolve => setTimeout(resolve, 1000));
-			return name === 'vscode' ? 'Name not unique' : undefined;
+		if (pick instanceof MyButton) {
+			window.showInformationMessage("Button");
+		} else {
+			state.resourceGroup = pick;
+			window.showInformationMessage("Pick");
+			return (input: MultiStepInput) => enableAppCenterDistribution(input, state);
 		}
+		return (input: MultiStepInput) => enableAppCenterDistribution(input, state);
+	}
 
-		//return (input: MultiStepInput) => inputName(input, state);
+	async function enableAppCenterDistribution(input: MultiStepInput, state: Partial<State>) {
+
+		const answers: QuickPickItem[] = ['Yes', 'No'].map(label => ({ label }));
+
+		const title = 'Do you want to distribute it using App Center?';
+
+		const pick = await input.showQuickPick({
+			title,
+			items: answers,
+			activeItem: typeof state.resourceGroup !== 'string' ? state.resourceGroup : undefined,
+			buttons: [createResourceGroupButton],
+			shouldResume: shouldResume
+		});
+
+		if (pick instanceof MyButton) {
+			window.showInformationMessage("Button");
+		} else {
+			state.resourceGroup = pick;
+			window.showInformationMessage("Pick");
+		}
 	}
 
 	function shouldResume() {
@@ -113,6 +136,7 @@ export async function configureYaml(context: ExtensionContext) {
 	const state = {} as Partial<State>;
 	await MultiStepInput.run(input => chooseFileName(input, state));
 
+	console.log(state);
 	window.showInformationMessage('Generation done.');
 }
 
@@ -132,8 +156,8 @@ type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
 interface QuickPickParameters<T extends QuickPickItem> {
 	title: string;
 	items: T[];
-	placeholder: string;
 	shouldResume: () => Thenable<boolean>;
+	placeholder?: string;
 	step?: number;
 	totalSteps?: number;
 	activeItem?: T;
