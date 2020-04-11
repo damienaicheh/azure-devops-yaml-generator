@@ -1,4 +1,6 @@
-import { window, commands, ExtensionContext, QuickPickItem, Disposable, CancellationToken, QuickInputButton, QuickInput, QuickInputButtons, Uri } from 'vscode';
+import { window, commands, workspace, ExtensionContext, QuickPickItem, Disposable, CancellationToken, QuickInputButton, QuickInput, QuickInputButtons, Uri } from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -15,7 +17,7 @@ export function activate(context: ExtensionContext) {
 export function deactivate() { }
 
 class ProjectConfiguration {
-	fileName: string | undefined;
+	fileName: string = 'azure-pipelines.yml';
 	technology: Technology | undefined;
 	enableUnitTest: boolean | undefined;
 	enableAppCenter: boolean | undefined;
@@ -130,7 +132,7 @@ export async function configureYaml(context: ExtensionContext) {
 
 		configuration.enableAppCenter = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
 
-		window.showInformationMessage("Pick");
+		await create();
 	}
 
 	function shouldResume() {
@@ -140,12 +142,29 @@ export async function configureYaml(context: ExtensionContext) {
 		});
 	}
 
+	async function create() {
+		const folderPath = workspace.rootPath ?? '';
+		console.log(folderPath);
+
+		const yamlContent = `# yaml`;
+
+		fs.writeFile(path.join(folderPath, configuration.fileName), yamlContent, err => {
+			if (err) {
+				console.log(err);
+				return window.showErrorMessage(
+					"Failed to create file!"
+				);
+			}
+			window.showInformationMessage('Generation done.');
+		});
+	}
+
+
 	//const state = {} as Partial<State>;
 	var configuration = new ProjectConfiguration();
 	await MultiStepInput.run(input => chooseFileName(configuration, input));
 
 	console.log(configuration);
-	window.showInformationMessage('Generation done.');
 }
 
 // -------------------------------------------------------
