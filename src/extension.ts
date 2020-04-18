@@ -9,7 +9,7 @@ import { AndroidXamarinGenerator } from './generators/androidXamarinGenerator';
 export function activate(context: ExtensionContext) {
 
 	let disposable = commands.registerCommand('azuredevopsyamlgenerator.helloWorld', async () => {
-		bootstrap();
+		bootstrap(context);
 	});
 
 	context.subscriptions.push(disposable);
@@ -18,7 +18,7 @@ export function activate(context: ExtensionContext) {
 // this method is called when your extension is deactivated
 export function deactivate() { }
 
-async function bootstrap() {
+async function bootstrap(context: ExtensionContext) {
 	var generator: YamlGenerator;
 
 	async function chooseTechnology(input: MultiStepInput) {
@@ -43,19 +43,23 @@ async function bootstrap() {
 				generator = new AndroidXamarinGenerator();
 				break;
 			case Technology.XamarinForms:
+				generator = new AndroidXamarinGenerator();
 				break;
 			case Technology.iOS:
+				generator = new AndroidXamarinGenerator();
 				break;
 			case Technology.Android:
+				generator = new AndroidXamarinGenerator();
 				break;
 			case Technology.UWP:
+				generator = new AndroidXamarinGenerator();
 				break;
 		}
 
-		return (input: MultiStepInput) => chooseFileName(input);
+		return (input: MultiStepInput) => chooseFileName(input, context);
 	}
 
-	async function chooseFileName(input: MultiStepInput) {
+	async function chooseFileName(input: MultiStepInput, context: ExtensionContext) {
 		const title = 'Give a name to your yaml pipeline file';
 
 		generator.fileName = await input.showInputBox({
@@ -72,10 +76,10 @@ async function bootstrap() {
 
 		window.showInformationMessage(`You choose: ${generator.fileName}`);
 
-		return (input: MultiStepInput) => enableUnitTests(input);
+		return (input: MultiStepInput) => enableUnitTests(input, context);
 	}
 
-	async function enableUnitTests(input: MultiStepInput) {
+	async function enableUnitTests(input: MultiStepInput, context: ExtensionContext) {
 
 		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
@@ -90,10 +94,10 @@ async function bootstrap() {
 		var answer = getKeyFromValue(AnswerLabel, pick.label);
 		generator.addUnitTest = answer === Answer.Yes;
 
-		return (input: MultiStepInput) => enableAppCenterDistribution(input);
+		return (input: MultiStepInput) => enableAppCenterDistribution(input, context);
 	}
 
-	async function enableAppCenterDistribution(input: MultiStepInput) {
+	async function enableAppCenterDistribution(input: MultiStepInput, context: ExtensionContext) {
 
 		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
@@ -107,7 +111,7 @@ async function bootstrap() {
 
 		generator.addAppCenter = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
 
-		generator.generate();
+		generator.generate(context);
 	}
 
 	function getKeyFromValue<T>(map: Map<T, string>, search: string) {

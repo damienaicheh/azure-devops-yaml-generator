@@ -1,0 +1,225 @@
+trigger: none
+
+pool:
+  vmImage: {{vmImage}}
+
+stages:
+  {{#if unitTests}}
+  - stage: Run_Unit_Tests
+    jobs:
+      - job:
+        displayName: 'Run Unit Tests'
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solutionPath)'
+
+          - task: UseDotNet@2 
+            displayName: ".NET Core 3.1.x"
+            inputs:
+              version: '3.1.x'
+              packageType: sdk
+
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              command: build
+              projects: '$(Build.SourcesDirectory)/{{projectName}}.Tests/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: test
+              projects: '$(Build.SourcesDirectory)/{{projectName}}.Tests/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+  {{/if}}
+
+  - stage: Build_Xamarin_Android
+    {{#if unitTests}}
+    dependsOn: Run_Unit_Tests
+    {{/if}}
+    jobs:
+      - job:
+        displayName: 'Build Xamarin.Android'
+        workspace:
+          clean: all
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solutionPath)'
+
+          {{#if automaticVersion}}
+          - task: ExtractVersionFromTag@1
+
+          - task: UpdateAndroidVersionManifest@1
+            inputs:
+              androidManifestPath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
+          {{/if}}
+
+          {{#if launchIconBadge}}
+          - task: LaunchIconBadge@1
+            inputs:
+              sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.Android/Resources'
+              contents: '**/icon.png'
+              bannerVersionNamePosition: 'bottomRight'
+              bannerVersionNameText: '$(buildConfiguration)'
+          {{/if}}
+
+
+          - script: sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh $(xamarinSdkVersion)
+            displayName: 'Select the Xamarin SDK version'
+            enabled: true
+
+          - task: DownloadSecureFile@1
+            name: keyStore
+            displayName: "Download keystore from secure files"
+            inputs:
+              secureFile: 'production.jks'
+
+          - task: Bash@3
+            displayName: "Download keystore from secure files"
+            inputs:
+              targetType: "inline"
+              script: |
+                msbuild -restore $(Build.SourcesDirectory)/{{projectName}}.Android/*.csproj -t:SignAndroidPackage -p:AndroidPackageFormat=apk -p:Configuration=$(buildConfiguration) -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(keyStore.secureFilePath) -p:AndroidSigningStorePass=$(keystore.password) -p:AndroidSigningKeyAlias=$(key.alias) -p:AndroidSigningKeyPass=$(key.password)
+          
+          - task: CopyFiles@2
+            displayName: 'Copy deliverables'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.Android/bin/$(buildConfiguration)'
+              Contents: '*Signed.apk'
+              TargetFolder: 'drop/$(buildConfiguration)_android'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish release'
+            inputs:
+              pathToPublish: 'drop/$(buildConfiguration)_android'
+              artifactName: '$(buildConfiguration)_android'
+
+  - stage: Build_Xamarin_iOS
+    {{#if unitTests}}
+    dependsOn: Run_Unit_Tests
+    {{/if}}
+    jobs:
+      - job:
+        displayName: 'Build Xamarin.iOS'
+        workspace:
+          clean: all
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solutionPath)'
+
+          {{#if automaticVersion}}
+          - task: ExtractVersionFromTag@1
+
+          - task: UpdateiOSVersionInfoPlist@1
+            inputs:
+              infoPlistPath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'   
+          {{/if}}
+
+          {{#if launchIconBadge}}
+          - task: LaunchIconBadge@1
+            inputs:
+              sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Assets.xcassets/AppIcon.appiconset'
+              contents: '**/*.png'
+              bannerVersionNamePosition: 'bottomRight'
+              bannerVersionNameText: '$(buildConfiguration)'
+          {{/if}}
+
+          - script: sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh $(xamarinSdkVersion)
+            displayName: 'Select the Xamarin SDK version'
+            enabled: true
+
+          - task: InstallAppleCertificate@2
+            inputs:
+              certSecureFile: '$(p12FileName)'
+              certPwd: '$(p12Password)'
+              keychain: 'temp'
+              deleteCert: true
+
+          - task: InstallAppleProvisioningProfile@1
+            inputs:
+              provisioningProfileLocation: 'secureFiles'
+              provProfileSecureFile: '$(provisioningProfile)'
+              removeProfile: true
+              
+          - task: XamariniOS@2
+            inputs:
+              solutionFile: '$(solutionPath)'
+              configuration: '$(buildConfiguration)'
+              packageApp: true
+              buildForSimulator: false
+              runNugetRestore: false
+              signingIdentity: '$(APPLE_CERTIFICATE_SIGNING_IDENTITY)'
+              signingProvisioningProfileID: '$(APPLE_PROV_PROFILE_UUID)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy deliverables'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/bin/iPhone/$(buildConfiguration)'
+              Contents: '*.ipa'
+              TargetFolder: 'drop/$(buildConfiguration)_ios'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish release'
+            inputs:
+              pathToPublish: 'drop/$(buildConfiguration)_ios'
+              artifactName: '$(buildConfiguration)_ios'
+
+  {{#if distribute}}
+  - stage: Distribute_Android
+    dependsOn: Build_Xamarin_Android
+    jobs:
+      - job:
+        displayName: 'Distribute Xamarin.Android'
+        steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'specific'
+              downloadPath: 'releases_drop'
+
+          - task: AppCenterDistribute@3
+            displayName: 'Distribute to Visual Studio App Center'
+            inputs:
+              serverEndpoint: 'VSAC'
+              appSlug: '$(androidAppSlug)'
+              appFile: 'releases_drop/$(buildConfiguration)_android/*.apk'
+              releaseNotesOption: 'input'
+              releaseNotesInput: 'New Version'
+              destinationType: 'groups'
+              distributionGroupId: '$(androidDistributionGroupId)'
+
+  - stage: Distribute_iOS
+    dependsOn: Build_Xamarin_iOS
+    jobs:
+      - job:
+        displayName: 'Distribute Xamarin.iOS'
+        steps:
+
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download artifacts'
+          inputs:
+            buildType: 'current'
+            downloadType: 'specific'
+            downloadPath: 'releases_drop'
+
+        - task: AppCenterDistribute@3
+          displayName: 'Distribute to Visual Studio App Center'
+          inputs:
+            serverEndpoint: 'VSAC'
+            appSlug: '$(iOSAppSlug)'
+            appFile: 'releases_drop/$(buildConfiguration)_ios/*.ipa'
+            releaseNotesOption: 'input'
+            releaseNotesInput: 'New Version'
+            destinationType: 'groups'
+            distributionGroupId: '$(iOSDistributionGroupId)'
+   {{/if}}
