@@ -37,6 +37,44 @@ interface InputBoxParameters {
 
 export class MultiStepInput {
 
+    static async runAll<T>(steps: InputStep[]) {
+        const input = new MultiStepInput();
+        return input.allStepThrough(steps);
+    }
+
+    public async allStepThrough<T>(entries: InputStep[]) {
+        var index = 0;
+        let step: InputStep | void = entries[0];
+        while (index < entries.length) {
+            console.log("Entries");
+            this.steps.push(entries[index]);
+            if (this.current) {
+                this.current.enabled = false;
+                this.current.busy = true;
+            }
+            try {
+                step = await entries[index](this); //step(this);
+                index++;
+            } catch (err) {
+                if (err === InputFlowAction.back) {
+                    this.steps.pop();
+                    step = this.steps.pop();
+                    index--;
+                } else if (err === InputFlowAction.resume) {
+                    step = this.steps.pop();
+                    index--;
+                } else if (err === InputFlowAction.cancel) {
+                    step = undefined;
+                } else {
+                    throw err;
+                }
+            }
+        }
+        if (this.current) {
+            this.current.dispose();
+        }
+    }
+
     static async run<T>(start: InputStep) {
         const input = new MultiStepInput();
         return input.stepThrough(start);
