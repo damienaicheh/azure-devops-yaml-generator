@@ -1,15 +1,15 @@
-import { window, commands, workspace, ExtensionContext, QuickPickItem, Disposable, CancellationToken, QuickInputButton, QuickInput, QuickInputButtons, Uri } from 'vscode';
+import { window, QuickPickItem } from 'vscode';
 import { YamlGenerator } from "./yaml-generator";
 import { MultiStepInput } from '../helpers/multi-step-case';
 
-export async function chooseFileName(generator: YamlGenerator, step: number, totalSteps: number, input: MultiStepInput, context: ExtensionContext) {
+export async function chooseFileName(generator: YamlGenerator, step: number, input: MultiStepInput) {
     const title = 'Give a name to your yaml pipeline file';
 
     generator.fileName = await input.showInputBox({
         title,
         value: 'azure-pipelines.yml',
         step: step,
-        totalSteps: totalSteps,
+        totalSteps: generator.entries.length,
         prompt: 'Give a name to your yaml pipeline file',
         validate: validateFileName,
         shouldResume: shouldResume
@@ -22,134 +22,49 @@ export async function chooseFileName(generator: YamlGenerator, step: number, tot
     window.showInformationMessage(`You choose: ${generator.fileName}`);
 }
 
-export async function enableUnitTests(generator: YamlGenerator, step: number, totalSteps: number, input: MultiStepInput, context: ExtensionContext) {
-
-    const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
-
-    const title = 'Do you want to run Unit Tests?';
-
-    const pick = await input.showQuickPick({
-        title,
-        step: step,
-        totalSteps: totalSteps,
-        items: answers,
-        shouldResume: shouldResume
-    });
-
-    var answer = getKeyFromValue(AnswerLabel, pick.label);
-    generator.unitTests = answer === Answer.Yes;
+export async function enableUnitTests(generator: YamlGenerator, step: number, input: MultiStepInput) {
+    generator.unitTests = await booleanPicker(generator, step, input, 'Do you want to run Unit Tests?');
 }
 
-export async function manageVersionAutomatically(generator: YamlGenerator, step: number, totalSteps: number, input: MultiStepInput, context: ExtensionContext) {
-
-    const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
-
-    const title = 'Manage version automatically?';
-
-    const pick = await input.showQuickPick({
-        title,
-        step: step,
-        totalSteps: totalSteps,
-        items: answers,
-        shouldResume: shouldResume
-    });
-
-    var answer = getKeyFromValue(AnswerLabel, pick.label);
-    generator.automaticVersion = answer === Answer.Yes;
+export async function manageVersionAutomatically(generator: YamlGenerator, step: number, input: MultiStepInput) {
+    generator.automaticVersion = await booleanPicker(generator, step, input, 'Manage version automatically?');
 }
 
-export async function setIdenfier(generator: YamlGenerator, step: number, totalSteps: number, input: MultiStepInput, context: ExtensionContext) {
+export async function updateIdenfier(generator: YamlGenerator, step: number, input: MultiStepInput) {
 
-    const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
-
-    const title = 'Manage application identifier?';
-
-    const pick = await input.showQuickPick({
-        title,
-        step: step,
-        totalSteps: totalSteps,
-        items: answers,
-        shouldResume: shouldResume
-    });
-
-    var answer = getKeyFromValue(AnswerLabel, pick.label);
-    //generator.automaticVersion = answer === Answer.Yes;
+    generator.updateIdentifier = await booleanPicker(generator, step, input, 'Manage application identifier?');
 }
 
-export async function addLaunchIconBadge(generator: YamlGenerator, step: number, totalSteps: number, input: MultiStepInput, context: ExtensionContext) {
-
-    const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
-
-    const title = 'Add launch icon badge?';
-
-    const pick = await input.showQuickPick({
-        title,
-        step: step,
-        totalSteps: totalSteps,
-        items: answers,
-        shouldResume: shouldResume
-    });
-
-    var answer = getKeyFromValue(AnswerLabel, pick.label);
-    generator.launchIconBadge = answer === Answer.Yes;
+export async function addLaunchIconBadge(generator: YamlGenerator, step: number, input: MultiStepInput) {
+    generator.launchIconBadge = await booleanPicker(generator, step, input, 'Add launch icon badge?');
 }
 
-export async function publishArtifacts(generator: YamlGenerator, step: number, totalSteps: number, input: MultiStepInput, context: ExtensionContext) {
-
-    const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
-
-    const title = 'Do you want to publish tha artifacts?';
-
-    const pick = await input.showQuickPick({
-        title,
-        items: answers,
-        shouldResume: shouldResume
-    });
-
-    generator.distribute = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
+export async function publishArtifacts(generator: YamlGenerator, step: number, input: MultiStepInput) {
+    generator.generateArtifacts = await booleanPicker(generator, step, input, 'Do you want to publish tha artifacts?');
 }
 
-export async function enableAppCenterDistribution(generator: YamlGenerator, step: number, totalSteps: number, input: MultiStepInput, context: ExtensionContext) {
-
-    const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
-
-    const title = 'Do you want to distribute it using App Center?';
-
-    const pick = await input.showQuickPick({
-        title,
-        step: step,
-        totalSteps: totalSteps,
-        items: answers,
-        shouldResume: shouldResume
-    });
-
-    generator.distribute = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
-
-    generator.generate(context);
-}
-
-function getKeyFromValue<T>(map: Map<T, string>, search: string) {
-    for (let [key, value] of map.entries()) {
-        if (value === search) {
-            return key;
-        }
-    }
+export async function enableAppCenterDistribution(generator: YamlGenerator, step: number, input: MultiStepInput) {
+    generator.distribute = await booleanPicker(generator, step, input, 'Do you want to distribute it using App Center?');
 }
 
 function shouldResume() {
     // Could show a notification with the option to resume.
-    return new Promise<boolean>((resolve, reject) => {
+    return new Promise<boolean>(() => {
 
     });
 }
 
+export async function booleanPicker(generator: YamlGenerator, step: number, input: MultiStepInput, title: string, yesOption: string = 'Yes', noOption: string = 'No') {
 
-enum Answer {
-    No,
-    Yes
+    const answers: QuickPickItem[] = [yesOption, noOption].map(label => ({ label }));
+
+    const pick = await input.showQuickPick({
+        title,
+        step: step,
+        totalSteps: generator.entries.length,
+        items: answers,
+        shouldResume: shouldResume
+    });
+
+    return pick.label === yesOption;
 }
-
-export const AnswerLabel = new Map<Answer, string>([
-    [Answer.Yes, 'Yes'],
-    [Answer.No, 'No'],
-]);

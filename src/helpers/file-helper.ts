@@ -16,16 +16,14 @@ export class FileHelper {
         });
     }
 
-    static createFile(folderPath: string, fileName: string, content: string) {
+    static createFile(folderPath: string, fileName: string, content: string, successMessage: string, failedMessage: string) {
         fs.writeFile(path.join(folderPath, fileName), content, err => {
             if (err) {
                 console.log(err);
-                return window.showErrorMessage(
-                    "Failed to create file!"
-                );
+                return window.showErrorMessage(failedMessage);
             }
 
-            window.showInformationMessage('Generation done.');
+            window.showInformationMessage(successMessage);
         });
     }
 }
