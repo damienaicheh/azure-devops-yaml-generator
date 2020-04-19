@@ -21,29 +21,6 @@ async function bootstrap(context: ExtensionContext) {
 	var currentStep = 1;
 	var totalStep = 7;
 
-	async function chooseTechnology(input: MultiStepInput) {
-
-		const technologies: QuickPickItem[] = Array.from(TechnologyLabel.values())
-			.sort((a, b) => (a > b ? -1 : 1)).map(label => ({ label }));
-
-		const title = 'Which technology do you use?';
-
-		const pick = await input.showQuickPick({
-			title,
-			placeholder: '',
-			step: currentStep,
-			totalSteps: totalStep,
-			items: technologies,
-			shouldResume: shouldResume
-		});
-
-		currentStep++;
-
-		//generator =  getKeyFromValue(TechnologyLabel, pick.label);
-
-		return (input: MultiStepInput) => chooseFileName(input, context);
-	}
-
 	async function chooseFileName(input: MultiStepInput, context: ExtensionContext) {
 		const title = 'Give a name to your yaml pipeline file';
 
@@ -160,7 +137,7 @@ async function bootstrap(context: ExtensionContext) {
 
 		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
-		const title = 'Do you want to distribute it using App Center?';
+		const title = 'Do you want to publish tha artifacts?';
 
 		const pick = await input.showQuickPick({
 			title,
@@ -211,7 +188,7 @@ async function bootstrap(context: ExtensionContext) {
 		});
 	}
 
-	await MultiStepInput.run(input => chooseTechnology(input));
+	await MultiStepInput.run(input => chooseFileName(input, context));
 }
 
 enum Technology {

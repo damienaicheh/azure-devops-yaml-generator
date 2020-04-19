@@ -27,65 +27,13 @@ export class YamlGenerator {
 
         var source = await FileHelper.readFileAsync(templatePath);
 
-
         var template = Handlebars.compile(source);
 
-        var data = {
-            "fileName": "",
-            "projectName": "XamarinDevOps",
-            "vmImage": "macOS-latest",
-            "unitTests": true,
-            "automaticVersion": true,
-            "launchIconBadge": false,
-            "generateArtifacts": true,
-            "distribute": false,
-        };
-
-        var result = template(data);
-
-        FileHelper.createFile(folderPath, "azure-pipelines.yml", result);
-
-        ///
-
-        var data2 = {
-            "fileName": "",
-            "projectName": "CrazyProject",
-            "vmImage": "macOS-latest",
-            "unitTests": false,
-            "automaticVersion": false,
-            "launchIconBadge": true,
-            "generateArtifacts": false,
-            "distribute": true,
-        };
-        var result = template(data2);
-
-        FileHelper.createFile(folderPath, "azure-crazy.yml", result);
-
+        console.log(this);
 
         var result = template(this);
 
-        FileHelper.createFile(folderPath, "azure-pipelines-official.yml", result);
-
-        // const object = {
-        //     pool: { vmImage: 'macOS-latest' },
-        //     steps: [{
-        //         script: 'sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh 6_4_0',
-        //         displayName: 'Select the Xamarin SDK version',
-        //         enabled: true,
-        //     }, {
-        //         task: 'InstallAppleCertificate@2',
-        //         inputs: {
-        //             certSecureFile: '$(p12FileName)',
-        //             certPwd: '$(p12Password)',
-        //             keychain: 'temp',
-        //             deleteCert: true
-        //         }
-        //     }],
-        // };
-
-        // const yamlContent = YAML.stringify(object);
-
-        // this.createFile(folderPath, this.fileName, yamlContent);
+        FileHelper.createFile(folderPath, this.fileName, result);
 
         console.log("Generate YAML");
     }
