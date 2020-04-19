@@ -9,8 +9,8 @@ export async function chooseFileName(generator: YamlGenerator, step: number, inp
         title,
         value: 'azure-pipelines.yml',
         step: step,
-        totalSteps: generator.entries.length,
-        prompt: 'Give a name to your yaml pipeline file',
+        totalSteps: generator.steps.length,
+        prompt: 'The file name must finish with .yml extension',
         validate: validateFileName,
         shouldResume: shouldResume
     });
@@ -61,7 +61,7 @@ export async function booleanPicker(generator: YamlGenerator, step: number, inpu
     const pick = await input.showQuickPick({
         title,
         step: step,
-        totalSteps: generator.entries.length,
+        totalSteps: generator.steps.length,
         items: answers,
         shouldResume: shouldResume
     });

@@ -33,10 +33,10 @@ export class YamlGenerator {
 
     distribute: boolean = false;
 
-    entries: InputStep[] = [];
+    steps: InputStep[] = [];
 
     async generate(context: ExtensionContext) {
-        await MultiStepInput.runAll(this.entries);
+        await MultiStepInput.runAll(this.steps);
 
         const folderPath = workspace.rootPath ?? '';
 

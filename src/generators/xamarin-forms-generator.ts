@@ -7,7 +7,7 @@ export class XamarinFormsGenerator extends YamlGenerator {
         super();
         this.template = 'stages.yml.tmpl';
         this.vmImage = 'macOS-latest';
-        this.entries = [
+        this.steps = [
             input => steps.chooseFileName(this, 0, input),
             input => steps.enableUnitTests(this, 1, input),
             input => steps.manageVersionAutomatically(this, 2, input),
