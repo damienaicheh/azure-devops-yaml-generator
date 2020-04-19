@@ -49,7 +49,6 @@ export class MultiStepInput {
         var index = 0;
         let step: InputStep | void = entries[0];
         while (index < entries.length) {
-            console.log("Entries");
             this.steps.push(entries[index]);
             if (this.current) {
                 this.current.enabled = false;

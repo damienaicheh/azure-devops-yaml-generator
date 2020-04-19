@@ -46,8 +46,6 @@ export class YamlGenerator {
 
         var template = Handlebars.compile(source);
 
-        console.log(this);
-
         var result = template(this);
 
         FileHelper.createFile(folderPath, this.fileName, result, 'Generation done', 'Failed to create file');
