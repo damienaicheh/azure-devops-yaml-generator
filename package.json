@@ -10,14 +10,30 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:azuredevopsyamlgenerator.helloWorld"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "azuredevopsyamlgenerator.helloWorld",
-				"title": "Hello World"
+				"command": "azuredevopsyamlgenerator.xamarin.ios",
+				"title": "Xamarin iOS template",
+				"category": "Azure DevOps YAML Generator"
+			},
+			{
+				"command": "azuredevopsyamlgenerator.xamarin.android",
+				"title": "Xamarin Android template",
+				"category": "Azure DevOps YAML Generator"
+			},
+			{
+				"command": "azuredevopsyamlgenerator.xamarin.forms",
+				"title": "Xamarin Forms template",
+				"category": "Azure DevOps YAML Generator"
+			},
+			{
+				"command": "azuredevopsyamlgenerator.uwp",
+				"title": "UWP template",
+				"category": "Azure DevOps YAML Generator"
 			}
 		]
 	},
@@ -45,7 +61,6 @@
 	"dependencies": {
 		"fs": "0.0.1-security",
 		"handlebars": "^4.7.6",
-		"path": "^0.12.7",
-		"yaml": "^1.8.3"
+		"path": "^0.12.7"
 	}
 }

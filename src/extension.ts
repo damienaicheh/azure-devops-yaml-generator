@@ -1,14 +1,12 @@
 import { window, commands, workspace, ExtensionContext, QuickPickItem, Disposable, CancellationToken, QuickInputButton, QuickInput, QuickInputButtons, Uri } from 'vscode';
-import { MultiStepInput } from './helpers/multiStepCase';
-import { YamlGenerator } from './generators/yamlGenerator';
-import { IosXamarinGenerator } from './generators/iosXamarinGenerator';
-import { AndroidXamarinGenerator } from './generators/androidXamarinGenerator';
+import { MultiStepInput } from './helpers/multi-step-case';
+import { YamlGenerator } from './generators/yaml-generator';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
 
-	let disposable = commands.registerCommand('azuredevopsyamlgenerator.helloWorld', async () => {
+	let disposable = commands.registerCommand('azuredevopsyamlgenerator.xamarin.ios', async () => {
 		bootstrap(context);
 	});
 
@@ -19,7 +17,9 @@ export function activate(context: ExtensionContext) {
 export function deactivate() { }
 
 async function bootstrap(context: ExtensionContext) {
-	var generator: YamlGenerator;
+	var generator = new YamlGenerator();
+	var currentStep = 1;
+	var totalStep = 7;
 
 	async function chooseTechnology(input: MultiStepInput) {
 
@@ -31,30 +31,15 @@ async function bootstrap(context: ExtensionContext) {
 		const pick = await input.showQuickPick({
 			title,
 			placeholder: '',
+			step: currentStep,
+			totalSteps: totalStep,
 			items: technologies,
 			shouldResume: shouldResume
 		});
 
-		switch (getKeyFromValue(TechnologyLabel, pick.label)) {
-			case Technology.XamariniOS:
-				generator = new IosXamarinGenerator();
-				break;
-			case Technology.XamarinAndroid:
-				generator = new AndroidXamarinGenerator();
-				break;
-			case Technology.XamarinForms:
-				generator = new AndroidXamarinGenerator();
-				break;
-			case Technology.iOS:
-				generator = new AndroidXamarinGenerator();
-				break;
-			case Technology.Android:
-				generator = new AndroidXamarinGenerator();
-				break;
-			case Technology.UWP:
-				generator = new AndroidXamarinGenerator();
-				break;
-		}
+		currentStep++;
+
+		//generator =  getKeyFromValue(TechnologyLabel, pick.label);
 
 		return (input: MultiStepInput) => chooseFileName(input, context);
 	}
@@ -65,6 +50,8 @@ async function bootstrap(context: ExtensionContext) {
 		generator.fileName = await input.showInputBox({
 			title,
 			value: 'azure-pipelines.yml',
+			step: currentStep,
+			totalSteps: totalStep,
 			prompt: 'Give a name to your yaml pipeline file',
 			validate: validateFileName,
 			shouldResume: shouldResume
@@ -75,6 +62,8 @@ async function bootstrap(context: ExtensionContext) {
 		}
 
 		window.showInformationMessage(`You choose: ${generator.fileName}`);
+
+		currentStep++;
 
 		return (input: MultiStepInput) => enableUnitTests(input, context);
 	}
@@ -87,12 +76,103 @@ async function bootstrap(context: ExtensionContext) {
 
 		const pick = await input.showQuickPick({
 			title,
+			step: currentStep,
+			totalSteps: totalStep,
 			items: answers,
 			shouldResume: shouldResume
 		});
 
 		var answer = getKeyFromValue(AnswerLabel, pick.label);
-		generator.addUnitTest = answer === Answer.Yes;
+		generator.unitTests = answer === Answer.Yes;
+
+		currentStep++;
+
+		return (input: MultiStepInput) => manageVersionAutomatically(input, context);
+	}
+
+	async function manageVersionAutomatically(input: MultiStepInput, context: ExtensionContext) {
+
+		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
+
+		const title = 'Manage version automatically?';
+
+		const pick = await input.showQuickPick({
+			title,
+			step: currentStep,
+			totalSteps: totalStep,
+			items: answers,
+			shouldResume: shouldResume
+		});
+
+		var answer = getKeyFromValue(AnswerLabel, pick.label);
+		generator.automaticVersion = answer === Answer.Yes;
+
+		currentStep++;
+
+		return (input: MultiStepInput) => setIdenfier(input, context);
+	}
+
+	async function setIdenfier(input: MultiStepInput, context: ExtensionContext) {
+
+		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
+
+		const title = 'Manage version automatically?';
+
+		const pick = await input.showQuickPick({
+			title,
+			step: currentStep,
+			totalSteps: totalStep,
+			items: answers,
+			shouldResume: shouldResume
+		});
+
+		var answer = getKeyFromValue(AnswerLabel, pick.label);
+		//generator.automaticVersion = answer === Answer.Yes;
+
+		currentStep++;
+
+		return (input: MultiStepInput) => addLaunchIconBadge(input, context);
+	}
+
+	async function addLaunchIconBadge(input: MultiStepInput, context: ExtensionContext) {
+
+		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
+
+		const title = 'Add launch icon badge?';
+
+		const pick = await input.showQuickPick({
+			title,
+			step: currentStep,
+			totalSteps: totalStep,
+			items: answers,
+			shouldResume: shouldResume
+		});
+
+		var answer = getKeyFromValue(AnswerLabel, pick.label);
+		generator.launchIconBadge = answer === Answer.Yes;
+
+		currentStep++;
+
+		return (input: MultiStepInput) => publishArtifacts(input, context);
+	}
+
+	async function publishArtifacts(input: MultiStepInput, context: ExtensionContext) {
+
+		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
+
+		const title = 'Do you want to distribute it using App Center?';
+
+		const pick = await input.showQuickPick({
+			title,
+			step: currentStep,
+			totalSteps: totalStep,
+			items: answers,
+			shouldResume: shouldResume
+		});
+
+		generator.distribute = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
+
+		currentStep++;
 
 		return (input: MultiStepInput) => enableAppCenterDistribution(input, context);
 	}
@@ -105,11 +185,13 @@ async function bootstrap(context: ExtensionContext) {
 
 		const pick = await input.showQuickPick({
 			title,
+			step: currentStep,
+			totalSteps: totalStep,
 			items: answers,
 			shouldResume: shouldResume
 		});
 
-		generator.addAppCenter = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
+		generator.distribute = getKeyFromValue(AnswerLabel, pick.label) === Answer.Yes;
 
 		generator.generate(context);
 	}

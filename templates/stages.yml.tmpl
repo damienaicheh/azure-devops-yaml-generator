@@ -87,6 +87,7 @@ stages:
               script: |
                 msbuild -restore $(Build.SourcesDirectory)/{{projectName}}.Android/*.csproj -t:SignAndroidPackage -p:AndroidPackageFormat=apk -p:Configuration=$(buildConfiguration) -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(keyStore.secureFilePath) -p:AndroidSigningStorePass=$(keystore.password) -p:AndroidSigningKeyAlias=$(key.alias) -p:AndroidSigningKeyPass=$(key.password)
           
+          {{#if generateArtifacts}}
           - task: CopyFiles@2
             displayName: 'Copy deliverables'
             inputs:
@@ -99,6 +100,7 @@ stages:
             inputs:
               pathToPublish: 'drop/$(buildConfiguration)_android'
               artifactName: '$(buildConfiguration)_android'
+          {{/if}}
 
   - stage: Build_Xamarin_iOS
     {{#if unitTests}}
@@ -160,6 +162,7 @@ stages:
               signingIdentity: '$(APPLE_CERTIFICATE_SIGNING_IDENTITY)'
               signingProvisioningProfileID: '$(APPLE_PROV_PROFILE_UUID)'
 
+        {{#if generateArtifacts}}
           - task: CopyFiles@2
             displayName: 'Copy deliverables'
             inputs:
@@ -172,6 +175,7 @@ stages:
             inputs:
               pathToPublish: 'drop/$(buildConfiguration)_ios'
               artifactName: '$(buildConfiguration)_ios'
+        {{/if}}
 
   {{#if distribute}}
   - stage: Distribute_Android
