@@ -93,7 +93,7 @@ async function bootstrap(context: ExtensionContext) {
 
 		const answers: QuickPickItem[] = Array.from(AnswerLabel.values()).map(label => ({ label }));
 
-		const title = 'Manage version automatically?';
+		const title = 'Manage application identifier?';
 
 		const pick = await input.showQuickPick({
 			title,
@@ -190,24 +190,6 @@ async function bootstrap(context: ExtensionContext) {
 
 	await MultiStepInput.run(input => chooseFileName(input, context));
 }
-
-enum Technology {
-	XamariniOS,
-	XamarinAndroid,
-	XamarinForms,
-	UWP,
-	iOS,
-	Android
-}
-
-export const TechnologyLabel = new Map<Technology, string>([
-	[Technology.XamariniOS, 'Xamarin.iOS'],
-	[Technology.XamarinAndroid, 'Xamarin.Android'],
-	[Technology.XamarinForms, 'Xamarin.Forms'],
-	[Technology.UWP, 'UWP'],
-	[Technology.iOS, 'iOS'],
-	[Technology.Android, 'Android'],
-]);
 
 enum Answer {
 	No,

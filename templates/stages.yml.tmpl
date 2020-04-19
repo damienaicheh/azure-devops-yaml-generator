@@ -69,7 +69,6 @@ stages:
               bannerVersionNameText: '$(buildConfiguration)'
           {{/if}}
 
-
           - script: sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh $(xamarinSdkVersion)
             displayName: 'Select the Xamarin SDK version'
             enabled: true
