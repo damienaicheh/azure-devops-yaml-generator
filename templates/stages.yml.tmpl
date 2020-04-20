@@ -3,6 +3,39 @@ trigger: none
 pool:
   vmImage: {{vmImage}}
 
+variables:
+  - group: secret
+  - name: xamarinSdkVersion
+    value: '6_6_0'
+  - name: solutionPath
+    value: '**/*.sln'
+  - name: buildConfiguration
+    value: 'Release'
+  {{#if updateIdentifier}}  
+  - name: packageName
+    value: ''
+  - name: appLabel
+    value: ''
+  - name: bundleIdentifier
+    value: ''
+  - name: bundleName
+    value: ''
+  - name: bundleDisplayName
+    value: ''
+  {{/if}}
+  {{#unless automaticVersion}}
+  - name: versionName
+    value: '1.0'
+  - name: versionCodeOffset
+    value: '0'
+  {{/unless}}
+  {{#if distribute}}   
+  - name: androidDistributionGroupId
+    value: ''
+  - name: iOSDistributionGroupId
+    value: ''
+  {{/if}}
+
 stages:
   {{#if unitTests}}
   - stage: Run_Unit_Tests
@@ -52,12 +85,30 @@ stages:
             inputs:
               restoreSolution: '$(solutionPath)'
 
+          {{#if updateIdentifier}}
+          - task: android-manifest-package-name@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
+              packageName: '$(packageName)'
+              appLabel: '$(appLabel)'
+              printFile: true
+          {{/if}}
+
           {{#if automaticVersion}}
           - task: ExtractVersionFromTag@1
 
           - task: UpdateAndroidVersionManifest@1
             inputs:
               androidManifestPath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
+          {{else}}
+          - task: android-manifest-version@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
+              versionCodeOption: 'buildid'
+              versionCode: '$(Build.BuildId)'
+              versionCodeOffset: $(versionCodeOffset)
+              versionName: '$(versionName).$(Build.BuildId)'
+              printFile: true
           {{/if}}
 
           {{#if launchIconBadge}}
@@ -117,12 +168,31 @@ stages:
             inputs:
               restoreSolution: '$(solutionPath)'
 
+          {{#if updateIdentifier}}
+          - task: ios-bundle-identifier@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
+              bundleIdentifier: '$(bundleIdentifier)'
+              bundleName: '$(bundleName)'
+              bundleDisplayName: '$(bundleDisplayName)'
+              printFile: true
+          {{/if}}
+
           {{#if automaticVersion}}
           - task: ExtractVersionFromTag@1
 
           - task: UpdateiOSVersionInfoPlist@1
             inputs:
               infoPlistPath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'   
+          {{else}}
+          - task: ios-bundle-version@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
+              versionCodeOption: 'buildid'
+              versionCode: '$(Build.BuildId)'
+              versionCodeOffset: '$(versionCodeOffset)'
+              versionName: '$(versionName).$(Build.BuildId)'
+              printFile: true
           {{/if}}
 
           {{#if launchIconBadge}}

@@ -1,14 +1,17 @@
-import { window, workspace, ExtensionContext, QuickPickItem, Disposable, CancellationToken, QuickInputButton, QuickInput, QuickInputButtons, Uri } from 'vscode';
+import { workspace, ExtensionContext, Uri } from 'vscode';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
 import { FileHelper } from '../helpers/file-helper';
 import { InputStep, MultiStepInput } from '../helpers/multi-step-case';
 
 /**
- * Total step
- * etat
- * Regroupement des méthodes de pick
- * Détermination de l'état d'apres
+ * ajout identifiant id
+ * version manuel ou set auto version git
+ * variables
+ * groups
+ * commentaires
+ * variabiliser tout
+ * ajout de succeed dans les stage
  */
 
 export class YamlGenerator {
@@ -32,6 +35,8 @@ export class YamlGenerator {
     generateArtifacts: boolean = false;
 
     distribute: boolean = false;
+
+    currentStep: number = 1;
 
     steps: InputStep[] = [];
 

@@ -2,49 +2,46 @@ import { window, QuickPickItem } from 'vscode';
 import { YamlGenerator } from "./yaml-generator";
 import { MultiStepInput } from '../helpers/multi-step-case';
 
-export async function chooseFileName(generator: YamlGenerator, step: number, input: MultiStepInput) {
-    const title = 'Give a name to your yaml pipeline file';
+export async function chooseFileName(generator: YamlGenerator, input: MultiStepInput) {
+    generator.fileName = await inputText(generator, input, 'Give a name to your yaml pipeline file', 'azure-pipelines.yml', 'The file name must finish with .yml extension', validateFileName);
 
-    generator.fileName = await input.showInputBox({
-        title,
-        value: 'azure-pipelines.yml',
-        step: step,
-        totalSteps: generator.steps.length,
-        prompt: 'The file name must finish with .yml extension',
-        validate: validateFileName,
-        shouldResume: shouldResume
-    });
-
-    async function validateFileName(name: string) {
-        return name.endsWith('.yml') ? undefined : 'Make sure your file extension is \'.yml\'';
+    async function validateFileName(text: string) {
+        return text.endsWith('.yml') ? undefined : 'Make sure your file extension is \'.yml\'';
     }
 
     window.showInformationMessage(`You choose: ${generator.fileName}`);
 }
 
-export async function enableUnitTests(generator: YamlGenerator, step: number, input: MultiStepInput) {
-    generator.unitTests = await booleanPicker(generator, step, input, 'Do you want to run Unit Tests?');
+export async function chooseProjectName(generator: YamlGenerator, input: MultiStepInput) {
+    generator.projectName = await inputText(generator, input, 'Give the same project name', 'ProjectName', 'The project name must not have spaces.', validateProjectName);
+
+    async function validateProjectName(text: string) {
+        return (/^\s*$/.test(text) || /\s/.test(text)) ? 'Make sur you don\'t have any spaces in your project name' : undefined;
+    }
 }
 
-export async function manageVersionAutomatically(generator: YamlGenerator, step: number, input: MultiStepInput) {
-    generator.automaticVersion = await booleanPicker(generator, step, input, 'Manage version automatically?');
+export async function enableUnitTests(generator: YamlGenerator, input: MultiStepInput) {
+    generator.unitTests = await booleanPicker(generator, input, 'Do you want to run Unit Tests?');
 }
 
-export async function updateIdenfier(generator: YamlGenerator, step: number, input: MultiStepInput) {
-
-    generator.updateIdentifier = await booleanPicker(generator, step, input, 'Manage application identifier?');
+export async function manageVersionAutomatically(generator: YamlGenerator, input: MultiStepInput) {
+    generator.automaticVersion = await booleanPicker(generator, input, 'Manage version automatically? (Git tag required)');
 }
 
-export async function addLaunchIconBadge(generator: YamlGenerator, step: number, input: MultiStepInput) {
-    generator.launchIconBadge = await booleanPicker(generator, step, input, 'Add launch icon badge?');
+export async function updateIdenfier(generator: YamlGenerator, input: MultiStepInput) {
+    generator.updateIdentifier = await booleanPicker(generator, input, 'Manage application identifier?');
 }
 
-export async function publishArtifacts(generator: YamlGenerator, step: number, input: MultiStepInput) {
-    generator.generateArtifacts = await booleanPicker(generator, step, input, 'Do you want to publish tha artifacts?');
+export async function addLaunchIconBadge(generator: YamlGenerator, input: MultiStepInput) {
+    generator.launchIconBadge = await booleanPicker(generator, input, 'Add launch icon badge?');
 }
 
-export async function enableAppCenterDistribution(generator: YamlGenerator, step: number, input: MultiStepInput) {
-    generator.distribute = await booleanPicker(generator, step, input, 'Do you want to distribute it using App Center?');
+export async function publishArtifacts(generator: YamlGenerator, input: MultiStepInput) {
+    generator.generateArtifacts = await booleanPicker(generator, input, 'Do you want to publish tha artifacts?');
+}
+
+export async function enableAppCenterDistribution(generator: YamlGenerator, input: MultiStepInput) {
+    generator.distribute = await booleanPicker(generator, input, 'Do you want to distribute it using App Center?');
 }
 
 function shouldResume() {
@@ -54,17 +51,36 @@ function shouldResume() {
     });
 }
 
-export async function booleanPicker(generator: YamlGenerator, step: number, input: MultiStepInput, title: string, yesOption: string = 'Yes', noOption: string = 'No') {
+export async function inputText(generator: YamlGenerator, input: MultiStepInput, title: string, defaultValue: string, prompt: string, validate: any) {
+
+    const inputResult = await input.showInputBox({
+        title,
+        value: defaultValue,
+        step: generator.currentStep,
+        totalSteps: generator.steps.length,
+        prompt: prompt,
+        validate: validate,
+        shouldResume: shouldResume
+    });
+
+    generator.currentStep++;
+
+    return inputResult;
+}
+
+export async function booleanPicker(generator: YamlGenerator, input: MultiStepInput, title: string, yesOption: string = 'Yes', noOption: string = 'No') {
 
     const answers: QuickPickItem[] = [yesOption, noOption].map(label => ({ label }));
 
     const pick = await input.showQuickPick({
         title,
-        step: step,
+        step: generator.currentStep,
         totalSteps: generator.steps.length,
         items: answers,
         shouldResume: shouldResume
     });
+
+    generator.currentStep++;
 
     return pick.label === yesOption;
 }

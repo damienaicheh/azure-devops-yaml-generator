@@ -8,7 +8,7 @@ export class XamariniOSGenerator extends YamlGenerator {
         this.template = 'stages.yml.tmpl';
         this.vmImage = 'macOS-latest';
         this.steps = [
-            input => steps.chooseFileName(this, 0, input),
+            input => steps.chooseFileName(this, input),
         ];
     }
 }
