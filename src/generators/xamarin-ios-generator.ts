@@ -1,14 +1,9 @@
-import { YamlGenerator } from "./yaml-generator";
-import *  as steps from "./steps";
+import { XamarinGenerator } from "./xamarin-generator";
 
-export class XamariniOSGenerator extends YamlGenerator {
+export class XamariniOSGenerator extends XamarinGenerator {
 
     constructor() {
         super();
-        this.template = 'stages.yml.tmpl';
-        this.vmImage = 'macOS-latest';
-        this.steps = [
-            input => steps.chooseFileName(this, input),
-        ];
+        this.template = 'xamarin.ios.stages.yml.tmpl';
     }
 }

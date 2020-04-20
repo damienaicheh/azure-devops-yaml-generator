@@ -1,0 +1,203 @@
+# This template was generated with the VS Code extension Azure Pipeline YAML Generator
+# A quick tutorial on how to build, sign and deploy your Xamarin.iOS application using Azure DevOps and App Center is available here:
+# https://damienaicheh.github.io/xamarin/azure/devops/appcenter/2019/11/14/build-sign-and-deploy-your-xamarin-ios-application-using-azure-devops-and-appcenter-en.html
+ 
+trigger: none
+
+pool:
+  vmImage: {{vmImage}}
+
+# Update all the variables just below.
+# Assuming you will create a secret group to store all your secure keys and password here are the list of all the variables you need to add:
+# - p12FileName
+# - p12Password
+# - provisioningProfile
+
+variables:
+  - group: secret
+  - name: xamarinSdkVersion
+    value: '6_6_0'
+  - name: solutionPath
+    value: '**/*.sln'
+  - name: buildConfiguration
+    value: 'Release'
+  {{#if updateIdentifier}}  
+  - name: bundleIdentifier
+    value: ''
+  - name: bundleName
+    value: ''
+  - name: bundleDisplayName
+    value: ''
+  {{/if}}
+  {{#unless automaticVersion}}
+  - name: versionName
+    value: '1.0'
+  - name: versionCodeOffset
+    value: '0'
+  {{/unless}}
+  {{#if distribute}}   
+  - name: serverEndpoint # Visual Studio App Center endpoint
+    value: ''
+  - name: iOSAppSlug
+    value: ''
+  - name: iOSDistributionGroupId
+    value: ''
+  {{/if}}
+
+stages:
+  {{#if unitTests}}
+  - stage: Run_Unit_Tests
+    jobs:
+      - job:
+        displayName: 'Run Unit Tests'
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solutionPath)'
+
+          - task: UseDotNet@2 
+            displayName: ".NET Core 3.1.x"
+            inputs:
+              version: '3.1.x'
+              packageType: sdk
+
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              command: build
+              projects: '$(Build.SourcesDirectory)/{{projectName}}.Tests/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: test
+              projects: '$(Build.SourcesDirectory)/{{projectName}}.Tests/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+  {{/if}}
+
+  - stage: Build_Xamarin_iOS
+    {{#if unitTests}}
+    dependsOn: Run_Unit_Tests
+    {{/if}}
+    jobs:
+      - job:
+        displayName: 'Build Xamarin.iOS'
+        workspace:
+          clean: all
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solutionPath)'
+
+          {{#if updateIdentifier}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
+          - task: ios-bundle-identifier@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
+              bundleIdentifier: '$(bundleIdentifier)'
+              bundleName: '$(bundleName)'
+              bundleDisplayName: '$(bundleDisplayName)'
+              printFile: true
+          {{/if}}
+
+          {{#if automaticVersion}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
+          - task: ExtractVersionFromTag@1
+
+          - task: UpdateiOSVersionInfoPlist@1
+            inputs:
+              infoPlistPath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'   
+          {{else}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
+          - task: ios-bundle-version@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
+              versionCodeOption: 'buildid'
+              versionCode: '$(Build.BuildId)'
+              versionCodeOffset: '$(versionCodeOffset)'
+              versionName: '$(versionName).$(Build.BuildId)'
+              printFile: true
+          {{/if}}
+
+          {{#if launchIconBadge}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
+          - task: LaunchIconBadge@1
+            inputs:
+              sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Assets.xcassets/AppIcon.appiconset'
+              contents: '**/*.png'
+              bannerVersionNamePosition: 'bottomRight'
+              bannerVersionNameText: '$(buildConfiguration)'
+          {{/if}}
+
+          - script: sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh $(xamarinSdkVersion)
+            displayName: 'Select the Xamarin SDK version'
+            enabled: true
+
+          - task: InstallAppleCertificate@2
+            inputs:
+              certSecureFile: '$(p12FileName)'
+              certPwd: '$(p12Password)'
+              keychain: 'temp'
+              deleteCert: true
+
+          - task: InstallAppleProvisioningProfile@1
+            inputs:
+              provisioningProfileLocation: 'secureFiles'
+              provProfileSecureFile: '$(provisioningProfile)'
+              removeProfile: true
+              
+          - task: XamariniOS@2
+            inputs:
+              solutionFile: '$(solutionPath)'
+              configuration: '$(buildConfiguration)'
+              packageApp: true
+              buildForSimulator: false
+              runNugetRestore: false
+              signingIdentity: '$(APPLE_CERTIFICATE_SIGNING_IDENTITY)'
+              signingProvisioningProfileID: '$(APPLE_PROV_PROFILE_UUID)'
+
+        {{#if generateArtifacts}}
+          - task: CopyFiles@2
+            displayName: 'Copy deliverables'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/bin/iPhone/$(buildConfiguration)'
+              Contents: '*.ipa'
+              TargetFolder: 'drop/$(buildConfiguration)_ios'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish release'
+            inputs:
+              pathToPublish: 'drop/$(buildConfiguration)_ios'
+              artifactName: '$(buildConfiguration)_ios'
+        {{/if}}
+
+  {{#if distribute}}
+  - stage: Distribute_iOS
+    dependsOn: Build_Xamarin_iOS
+    jobs:
+      - job:
+        displayName: 'Distribute Xamarin.iOS'
+        steps:
+
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download artifacts'
+          inputs:
+            buildType: 'current'
+            downloadType: 'specific'
+            downloadPath: 'releases_drop'
+
+        - task: AppCenterDistribute@3
+          displayName: 'Distribute to Visual Studio App Center'
+          inputs:
+            serverEndpoint: '$(serverEndpoint)'
+            appSlug: '$(iOSAppSlug)'
+            appFile: 'releases_drop/$(buildConfiguration)_ios/*.ipa'
+            releaseNotesOption: 'input'
+            releaseNotesInput: 'New Version'
+            destinationType: 'groups'
+            distributionGroupId: '$(iOSDistributionGroupId)'
+   {{/if}}

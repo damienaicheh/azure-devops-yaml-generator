@@ -3,9 +3,11 @@ import * as path from 'path';
 import * as Handlebars from 'handlebars';
 import { FileHelper } from '../helpers/file-helper';
 import { InputStep, MultiStepInput } from '../helpers/multi-step-case';
+import *  as steps from "./steps";
 
 /**
  * commentaires
+ * total step bug when back
  * ajout de succeed dans les stage
  */
 
@@ -33,7 +35,10 @@ export class YamlGenerator {
 
     currentStep: number = 1;
 
-    steps: InputStep[] = [];
+    steps: InputStep[] = [
+        input => steps.chooseFileName(this, input),
+        input => steps.chooseProjectName(this, input),
+    ];
 
     async generate(context: ExtensionContext) {
         await MultiStepInput.runAll(this.steps);

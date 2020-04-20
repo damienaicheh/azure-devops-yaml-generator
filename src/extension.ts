@@ -1,10 +1,12 @@
 import { commands, ExtensionContext } from 'vscode';
 import { XamarinFormsGenerator } from './generators/xamarin-forms-generator';
 import { XamariniOSGenerator } from './generators/xamarin-ios-generator';
+import { XamarinAndroidGenerator } from './generators/xamarin-android-generator';
 
 enum Keys {
 	XamarinForms = 'xamarin.forms',
 	XamariniOS = 'xamarin.ios',
+	XamarinAndroid = 'xamarin.android',
 }
 
 // this method is called when your extension is activated
@@ -17,6 +19,11 @@ export function activate(context: ExtensionContext) {
 	commands.registerCommand(`azuredevopsyamlgenerator.${Keys.XamariniOS}`, async () => {
 		bootstrap(Keys.XamariniOS, context);
 	});
+
+	commands.registerCommand(`azuredevopsyamlgenerator.${Keys.XamarinAndroid}`, async () => {
+		bootstrap(Keys.XamarinAndroid, context);
+	});
+
 
 	//context.subscriptions.push(disposable);
 }
@@ -34,7 +41,9 @@ async function bootstrap(key: string, context: ExtensionContext) {
 		case Keys.XamariniOS:
 			generator = new XamariniOSGenerator();
 			break;
-
+		case Keys.XamarinAndroid:
+			generator = new XamarinAndroidGenerator();
+			break;
 		default:
 			break;
 	}

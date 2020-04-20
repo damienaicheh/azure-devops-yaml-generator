@@ -1,21 +1,9 @@
-import { YamlGenerator } from "./yaml-generator";
-import *  as steps from "./steps";
+import { XamarinGenerator } from "./xamarin-generator";
 
-export class XamarinFormsGenerator extends YamlGenerator {
+export class XamarinFormsGenerator extends XamarinGenerator {
 
     constructor() {
         super();
-        this.template = 'stages.yml.tmpl';
-        this.vmImage = 'macOS-latest';
-        this.steps = [
-            input => steps.chooseFileName(this, input),
-            input => steps.chooseProjectName(this, input),
-            input => steps.enableUnitTests(this, input),
-            input => steps.manageVersionAutomatically(this, input),
-            input => steps.updateIdenfier(this, input),
-            input => steps.addLaunchIconBadge(this, input),
-            input => steps.publishArtifacts(this, input),
-            input => steps.enableAppCenterDistribution(this, input),
-        ];
+        this.template = 'xamarin.forms.stages.yml.tmpl';
     }
 }

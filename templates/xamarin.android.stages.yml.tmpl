@@ -1,0 +1,190 @@
+# This template was generated with the VS Code extension Azure Pipeline YAML Generator
+# A quick tutorial on how to build, sign and deploy your Xamarin.Android application using Azure DevOps and App Center is available here:
+# https://damienaicheh.github.io/xamarin/azure/devops/appcenter/2019/09/10/build-sign-and-deploy-your-xamarin-android-application-using-azure-devops-and-appcenter-en.html
+ 
+trigger: none
+
+pool:
+  vmImage: {{vmImage}}
+
+# Update all the variables just below.
+# Assuming you will create a secret group to store all your secure keys and password here are the list of all the variables you need to add:
+# - keystore
+# - keystore.password
+# - keystore.alias
+# - keystore.aliasPassword
+
+variables:
+  - group: secret
+  - name: xamarinSdkVersion
+    value: '6_6_0'
+  - name: solutionPath
+    value: '**/*.sln'
+  - name: buildConfiguration
+    value: 'Release'
+  {{#if updateIdentifier}}  
+  - name: packageName
+    value: ''
+  - name: appLabel
+    value: ''
+  {{/if}}
+  {{#unless automaticVersion}}
+  - name: versionName
+    value: '1.0'
+  - name: versionCodeOffset
+    value: '0'
+  {{/unless}}
+  {{#if distribute}}   
+  - name: serverEndpoint # Visual Studio App Center endpoint
+    value: ''
+  - name: androidAppSlug
+    value: ''
+  - name: androidDistributionGroupId
+    value: ''
+  {{/if}}
+
+stages:
+  {{#if unitTests}}
+  - stage: Run_Unit_Tests
+    jobs:
+      - job:
+        displayName: 'Run Unit Tests'
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solutionPath)'
+
+          - task: UseDotNet@2 
+            displayName: ".NET Core 3.1.x"
+            inputs:
+              version: '3.1.x'
+              packageType: sdk
+
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              command: build
+              projects: '$(Build.SourcesDirectory)/{{projectName}}.Tests/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: test
+              projects: '$(Build.SourcesDirectory)/{{projectName}}.Tests/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+  {{/if}}
+
+  - stage: Build_Xamarin_Android
+    {{#if unitTests}}
+    dependsOn: Run_Unit_Tests
+    {{/if}}
+    jobs:
+      - job:
+        displayName: 'Build Xamarin.Android'
+        workspace:
+          clean: all
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solutionPath)'
+
+          {{#if updateIdentifier}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
+          - task: android-manifest-package-name@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
+              packageName: '$(packageName)'
+              appLabel: '$(appLabel)'
+              printFile: true
+          {{/if}}
+
+          {{#if automaticVersion}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
+          - task: ExtractVersionFromTag@1
+
+          - task: UpdateAndroidVersionManifest@1
+            inputs:
+              androidManifestPath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
+          {{else}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
+          - task: android-manifest-version@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
+              versionCodeOption: 'buildid'
+              versionCode: '$(Build.BuildId)'
+              versionCodeOffset: $(versionCodeOffset)
+              versionName: '$(versionName).$(Build.BuildId)'
+              printFile: true
+          {{/if}}
+
+          {{#if launchIconBadge}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
+          - task: LaunchIconBadge@1
+            inputs:
+              sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.Android/Resources'
+              contents: '**/icon.png'
+              bannerVersionNamePosition: 'bottomRight'
+              bannerVersionNameText: '$(buildConfiguration)'
+          {{/if}}
+
+          - script: sudo $AGENT_HOMEDIRECTORY/scripts/select-xamarin-sdk.sh $(xamarinSdkVersion)
+            displayName: 'Select the Xamarin SDK version'
+            enabled: true
+
+          - task: DownloadSecureFile@1
+            name: keyStore
+            displayName: "Download keystore from secure files"
+            inputs:
+              secureFile: '$(keystore)'
+
+          - task: Bash@3
+            displayName: "Build Android package"
+            inputs:
+              targetType: "inline"
+              script: |
+                msbuild -restore $(Build.SourcesDirectory)/{{projectName}}.Android/*.csproj -t:SignAndroidPackage -p:AndroidPackageFormat=apk -p:Configuration=$(buildConfiguration) -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(keyStore.secureFilePath) -p:AndroidSigningStorePass=$(keystore.password) -p:AndroidSigningKeyAlias=$(keystore.alias) -p:AndroidSigningKeyPass=$(keystore.aliasPassword)
+          
+          {{#if generateArtifacts}}
+          - task: CopyFiles@2
+            displayName: 'Copy deliverables'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.Android/bin/$(buildConfiguration)'
+              Contents: '*Signed.apk'
+              TargetFolder: 'drop/$(buildConfiguration)_android'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish release'
+            inputs:
+              pathToPublish: 'drop/$(buildConfiguration)_android'
+              artifactName: '$(buildConfiguration)_android'
+          {{/if}}
+
+  {{#if distribute}}
+  - stage: Distribute_Android
+    dependsOn: Build_Xamarin_Android
+    jobs:
+      - job:
+        displayName: 'Distribute Xamarin.Android'
+        steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'specific'
+              downloadPath: 'releases_drop'
+
+          - task: AppCenterDistribute@3
+            displayName: 'Distribute to Visual Studio App Center'
+            inputs:
+              serverEndpoint: '$(serverEndpoint)'
+              appSlug: '$(androidAppSlug)'
+              appFile: 'releases_drop/$(buildConfiguration)_android/*.apk'
+              releaseNotesOption: 'input'
+              releaseNotesInput: 'New Version'
+              destinationType: 'groups'
+              distributionGroupId: '$(androidDistributionGroupId)'
+   {{/if}}

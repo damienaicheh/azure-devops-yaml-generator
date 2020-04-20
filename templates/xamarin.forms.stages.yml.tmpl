@@ -1,4 +1,7 @@
 # This template was generated with the VS Code extension Azure Pipeline YAML Generator
+# A complete series on how to manage your Xamarin Forms application using Azure DevOps is available here:
+# https://damienaicheh.github.io/xamarin/azure/devops/2020/02/27/run-unit-tests-using-xamarin-and-azure-devops-en.html
+ 
 trigger: none
 
 pool:
@@ -43,9 +46,13 @@ variables:
   {{#if distribute}}   
   - name: serverEndpoint # Visual Studio App Center endpoint
     value: ''
-  - name: androidDistributionGroupId
+  - name: iOSAppSlug
+    value: ''
+  - name: androidAppSlug
     value: ''
   - name: iOSDistributionGroupId
+    value: ''
+  - name: androidDistributionGroupId
     value: ''
   {{/if}}
 
@@ -99,6 +106,7 @@ stages:
               restoreSolution: '$(solutionPath)'
 
           {{#if updateIdentifier}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: android-manifest-package-name@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
@@ -108,12 +116,14 @@ stages:
           {{/if}}
 
           {{#if automaticVersion}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
           - task: ExtractVersionFromTag@1
 
           - task: UpdateAndroidVersionManifest@1
             inputs:
               androidManifestPath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
           {{else}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: android-manifest-version@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
@@ -125,6 +135,7 @@ stages:
           {{/if}}
 
           {{#if launchIconBadge}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
           - task: LaunchIconBadge@1
             inputs:
               sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.Android/Resources'
@@ -182,6 +193,7 @@ stages:
               restoreSolution: '$(solutionPath)'
 
           {{#if updateIdentifier}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: ios-bundle-identifier@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
@@ -192,12 +204,14 @@ stages:
           {{/if}}
 
           {{#if automaticVersion}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
           - task: ExtractVersionFromTag@1
 
           - task: UpdateiOSVersionInfoPlist@1
             inputs:
               infoPlistPath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'   
           {{else}}
+          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: ios-bundle-version@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
@@ -209,6 +223,7 @@ stages:
           {{/if}}
 
           {{#if launchIconBadge}}
+          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
           - task: LaunchIconBadge@1
             inputs:
               sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Assets.xcassets/AppIcon.appiconset'
