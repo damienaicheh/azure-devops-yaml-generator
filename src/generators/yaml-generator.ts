@@ -5,12 +5,7 @@ import { FileHelper } from '../helpers/file-helper';
 import { InputStep, MultiStepInput } from '../helpers/multi-step-case';
 
 /**
- * ajout identifiant id
- * version manuel ou set auto version git
- * variables
- * groups
  * commentaires
- * variabiliser tout
  * ajout de succeed dans les stage
  */
 

@@ -1,7 +1,18 @@
+# This template was generated with the VS Code extension Azure Pipeline YAML Generator
 trigger: none
 
 pool:
   vmImage: {{vmImage}}
+
+# Update all the variables just below.
+# Assuming you will create a secret group to store all your secure keys and password here are the list of all the variables you need to add:
+# - keystore
+# - keystore.password
+# - keystore.alias
+# - keystore.aliasPassword
+# - p12FileName
+# - p12Password
+# - provisioningProfile
 
 variables:
   - group: secret
@@ -30,6 +41,8 @@ variables:
     value: '0'
   {{/unless}}
   {{#if distribute}}   
+  - name: serverEndpoint # Visual Studio App Center endpoint
+    value: ''
   - name: androidDistributionGroupId
     value: ''
   - name: iOSDistributionGroupId
@@ -128,14 +141,14 @@ stages:
             name: keyStore
             displayName: "Download keystore from secure files"
             inputs:
-              secureFile: 'production.jks'
+              secureFile: '$(keystore)'
 
           - task: Bash@3
-            displayName: "Download keystore from secure files"
+            displayName: "Build Android package"
             inputs:
               targetType: "inline"
               script: |
-                msbuild -restore $(Build.SourcesDirectory)/{{projectName}}.Android/*.csproj -t:SignAndroidPackage -p:AndroidPackageFormat=apk -p:Configuration=$(buildConfiguration) -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(keyStore.secureFilePath) -p:AndroidSigningStorePass=$(keystore.password) -p:AndroidSigningKeyAlias=$(key.alias) -p:AndroidSigningKeyPass=$(key.password)
+                msbuild -restore $(Build.SourcesDirectory)/{{projectName}}.Android/*.csproj -t:SignAndroidPackage -p:AndroidPackageFormat=apk -p:Configuration=$(buildConfiguration) -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(keyStore.secureFilePath) -p:AndroidSigningStorePass=$(keystore.password) -p:AndroidSigningKeyAlias=$(keystore.alias) -p:AndroidSigningKeyPass=$(keystore.aliasPassword)
           
           {{#if generateArtifacts}}
           - task: CopyFiles@2
@@ -263,7 +276,7 @@ stages:
           - task: AppCenterDistribute@3
             displayName: 'Distribute to Visual Studio App Center'
             inputs:
-              serverEndpoint: 'VSAC'
+              serverEndpoint: '$(serverEndpoint)'
               appSlug: '$(androidAppSlug)'
               appFile: 'releases_drop/$(buildConfiguration)_android/*.apk'
               releaseNotesOption: 'input'
@@ -288,7 +301,7 @@ stages:
         - task: AppCenterDistribute@3
           displayName: 'Distribute to Visual Studio App Center'
           inputs:
-            serverEndpoint: 'VSAC'
+            serverEndpoint: '$(serverEndpoint)'
             appSlug: '$(iOSAppSlug)'
             appFile: 'releases_drop/$(buildConfiguration)_ios/*.ipa'
             releaseNotesOption: 'input'
