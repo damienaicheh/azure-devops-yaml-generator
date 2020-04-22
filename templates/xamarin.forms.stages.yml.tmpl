@@ -17,6 +17,22 @@ pool:
 # - p12Password
 # - provisioningProfile
 
+{{#if updateIdentifier}}
+# You need to install this set of extensions to update your identifiers:
+# https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
+{{/if}}
+{{#if automaticVersion}}
+# You need to install this set of extensions to automatically manage the version of your application:
+# https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
+{{else}}
+# You need to install a set of extensions to manually manage the version of your application:
+# https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks       
+{{/if}}
+{{#if launchIconBadge}}
+# You need to install this extension to add a banner to your launch icon:
+# https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
+{{/if}}
+
 variables:
   - group: secret
   - name: xamarinSdkVersion
@@ -106,7 +122,6 @@ stages:
               restoreSolution: '$(solutionPath)'
 
           {{#if updateIdentifier}}
-          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: android-manifest-package-name@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
@@ -116,14 +131,12 @@ stages:
           {{/if}}
 
           {{#if automaticVersion}}
-          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
           - task: ExtractVersionFromTag@1
 
           - task: UpdateAndroidVersionManifest@1
             inputs:
               androidManifestPath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
           {{else}}
-          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: android-manifest-version@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.Android/Properties/AndroidManifest.xml'
@@ -135,7 +148,6 @@ stages:
           {{/if}}
 
           {{#if launchIconBadge}}
-          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
           - task: LaunchIconBadge@1
             inputs:
               sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.Android/Resources'
@@ -193,7 +205,6 @@ stages:
               restoreSolution: '$(solutionPath)'
 
           {{#if updateIdentifier}}
-          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: ios-bundle-identifier@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
@@ -204,14 +215,12 @@ stages:
           {{/if}}
 
           {{#if automaticVersion}}
-          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
           - task: ExtractVersionFromTag@1
 
           - task: UpdateiOSVersionInfoPlist@1
             inputs:
               infoPlistPath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'   
           {{else}}
-          # You need to install a set of extensions to use the following task: https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
           - task: ios-bundle-version@1
             inputs:
               sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
@@ -223,7 +232,6 @@ stages:
           {{/if}}
 
           {{#if launchIconBadge}}
-          # You need to install this extension to use the following task: https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
           - task: LaunchIconBadge@1
             inputs:
               sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Assets.xcassets/AppIcon.appiconset'

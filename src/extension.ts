@@ -1,4 +1,4 @@
-import { commands, ExtensionContext } from 'vscode';
+import { commands, ExtensionContext, window } from 'vscode';
 import { XamarinFormsGenerator } from './generators/xamarin-forms-generator';
 import { XamariniOSGenerator } from './generators/xamarin-ios-generator';
 import { XamarinAndroidGenerator } from './generators/xamarin-android-generator';
@@ -7,23 +7,27 @@ enum Keys {
 	XamarinForms = 'xamarin.forms',
 	XamariniOS = 'xamarin.ios',
 	XamarinAndroid = 'xamarin.android',
+	UWP = 'uwp'
 }
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
-	commands.registerCommand(`azuredevopsyamlgenerator.${Keys.XamarinForms}`, async () => {
+	commands.registerCommand(`azure-pipeline-yaml-generator.${Keys.XamarinForms}`, async () => {
 		bootstrap(Keys.XamarinForms, context);
 	});
 
-	commands.registerCommand(`azuredevopsyamlgenerator.${Keys.XamariniOS}`, async () => {
+	commands.registerCommand(`azure-pipeline-yaml-generator.${Keys.XamariniOS}`, async () => {
 		bootstrap(Keys.XamariniOS, context);
 	});
 
-	commands.registerCommand(`azuredevopsyamlgenerator.${Keys.XamarinAndroid}`, async () => {
+	commands.registerCommand(`azure-pipeline-yaml-generator.${Keys.XamarinAndroid}`, async () => {
 		bootstrap(Keys.XamarinAndroid, context);
 	});
 
+	commands.registerCommand(`azure-pipeline-yaml-generator.${Keys.UWP}`, async () => {
+		bootstrap(Keys.UWP, context);
+	});
 
 	//context.subscriptions.push(disposable);
 }
@@ -43,6 +47,9 @@ async function bootstrap(key: string, context: ExtensionContext) {
 			break;
 		case Keys.XamarinAndroid:
 			generator = new XamarinAndroidGenerator();
+			break;
+		case Keys.UWP:
+			window.showInformationMessage("Not implemented yet");
 			break;
 		default:
 			break;

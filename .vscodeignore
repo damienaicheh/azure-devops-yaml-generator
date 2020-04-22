@@ -8,3 +8,9 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
+
+# Extra file to ignore
+vsc-extension-quickstart.md
+node_modules/**/test/**
+tsconfig.json
+.eslintrc

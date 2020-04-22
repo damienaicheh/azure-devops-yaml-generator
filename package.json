@@ -1,8 +1,16 @@
 {
-	"name": "azuredevopsyamlgenerator",
-	"displayName": "AzureDevOpsYamlGenerator",
+	"name": "azure-pipeline-yaml-generator",
+	"displayName": "Azure Pipeline YAML Generator",
 	"description": "",
 	"version": "0.0.1",
+	"publisher": "damienaicheh",
+	"license": "LICENSE.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com"
+	},
+	"icon": "icon.png",
+	"public": false,
 	"engines": {
 		"vscode": "^1.44.0"
 	},
@@ -16,24 +24,9 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "azuredevopsyamlgenerator.xamarin.ios",
-				"title": "Xamarin iOS template",
-				"category": "Azure DevOps YAML Generator"
-			},
-			{
-				"command": "azuredevopsyamlgenerator.xamarin.android",
-				"title": "Xamarin Android template",
-				"category": "Azure DevOps YAML Generator"
-			},
-			{
-				"command": "azuredevopsyamlgenerator.xamarin.forms",
+				"command": "azure-pipeline-yaml-generator.xamarin.forms",
 				"title": "Xamarin Forms template",
-				"category": "Azure DevOps YAML Generator"
-			},
-			{
-				"command": "azuredevopsyamlgenerator.uwp",
-				"title": "UWP template",
-				"category": "Azure DevOps YAML Generator"
+				"category": "Azure Pipeline YAML Generator"
 			}
 		]
 	},
