@@ -4,7 +4,8 @@ Generate Azure DevOps YAML pipelines.
 
 ## Known Issues
 
-Back button increase the total steps number.
+- Back button increase the total steps number.
+- You need to open a folder to let the extension save the file in it.
 
 ## Release Notes
 

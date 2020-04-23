@@ -45,7 +45,7 @@ export class YamlGenerator {
 
         const folderPath = workspace.rootPath ?? '';
 
-        var templatePath = Uri.file(path.join(context.extensionPath, `/templates/${this.template}`)).path;
+        var templatePath = path.join(context.extensionPath, `/templates/${this.template}`);
 
         var source = await FileHelper.readFileAsync(templatePath);
 
