@@ -10,7 +10,6 @@
 		"url": "https://github.com"
 	},
 	"icon": "icon.png",
-	"public": false,
 	"engines": {
 		"vscode": "^1.44.0"
 	},

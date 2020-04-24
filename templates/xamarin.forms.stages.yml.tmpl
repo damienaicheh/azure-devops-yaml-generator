@@ -1,21 +1,6 @@
 # This template was generated with the VS Code extension Azure Pipeline YAML Generator
 # A complete series on how to manage your Xamarin Forms application using Azure DevOps is available here:
 # https://damienaicheh.github.io/xamarin/azure/devops/2020/02/27/run-unit-tests-using-xamarin-and-azure-devops-en.html
- 
-trigger: none
-
-pool:
-  vmImage: {{vmImage}}
-
-# Update all the variables just below.
-# Assuming you will create a secret group to store all your secure keys and password here are the list of all the variables you need to add:
-# - keystore
-# - keystore.password
-# - keystore.alias
-# - keystore.aliasPassword
-# - p12FileName
-# - p12Password
-# - provisioningProfile
 
 {{#if updateIdentifier}}
 # You need to install this set of extensions to update your identifiers:
@@ -32,6 +17,29 @@ pool:
 # You need to install this extension to add a banner to your launch icon:
 # https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
 {{/if}}
+ 
+# Update all the variables just below.
+# Assuming you will create a secret group to store all your secure keys and password here are the list of all the variables you need to add:
+# - keystore
+# - keystore.password
+# - keystore.alias
+# - keystore.aliasPassword
+# - p12FileName
+# - p12Password
+# - provisioningProfile
+
+# A quick tutorial to setup Azure DevOps and App Center to deploy your application is available here:
+# https://damienaicheh.github.io/azure/devops/appcenter/2019/11/10/setup-azure-devops-and-appcenter-to-deploy-your-application-en.html
+
+{{#if distribute}}   
+# A quick tutorial to setup Azure DevOps and App Center to deploy your application is available here:
+# https://damienaicheh.github.io/azure/devops/appcenter/2019/11/10/setup-azure-devops-and-appcenter-to-deploy-your-application-en.html
+{{/if}}
+
+trigger: none
+
+pool:
+  vmImage: {{vmImage}}
 
 variables:
   - group: secret
