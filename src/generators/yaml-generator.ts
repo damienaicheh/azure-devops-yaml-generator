@@ -23,6 +23,8 @@ export class YamlGenerator {
 
     unitTests: boolean = false;
 
+    useAab: boolean = false;
+
     automaticVersion: boolean = false;
 
     updateIdentifier: boolean = false;

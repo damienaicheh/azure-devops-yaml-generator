@@ -26,6 +26,16 @@
 				"command": "azure-pipeline-yaml-generator.xamarin.forms",
 				"title": "Xamarin Forms template",
 				"category": "Azure Pipeline YAML Generator"
+			},
+			{
+				"command": "azure-pipeline-yaml-generator.xamarin.ios",
+				"title": "Xamarin iOS template",
+				"category": "Azure Pipeline YAML Generator"
+			},
+			{
+				"command": "azure-pipeline-yaml-generator.xamarin.android",
+				"title": "Xamarin Android template",
+				"category": "Azure Pipeline YAML Generator"
 			}
 		]
 	},

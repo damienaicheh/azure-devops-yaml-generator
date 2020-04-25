@@ -24,11 +24,15 @@ export async function enableUnitTests(generator: YamlGenerator, input: MultiStep
     generator.unitTests = await booleanPicker(generator, input, 'Do you want to run Unit Tests?');
 }
 
+export async function androidPackageType(generator: YamlGenerator, input: MultiStepInput) {
+    generator.useAab = await booleanPicker(generator, input, 'What type of Android package do you want to use?', 'Android App Bundle (Recommanded)', 'Apk');
+}
+
 export async function manageVersionAutomatically(generator: YamlGenerator, input: MultiStepInput) {
     generator.automaticVersion = await booleanPicker(generator, input, 'Manage version automatically? (Git tag required)');
 }
 
-export async function updateIdenfier(generator: YamlGenerator, input: MultiStepInput) {
+export async function updateIdentifier(generator: YamlGenerator, input: MultiStepInput) {
     generator.updateIdentifier = await booleanPicker(generator, input, 'Manage application identifier?');
 }
 

@@ -179,14 +179,14 @@ stages:
             inputs:
               targetType: "inline"
               script: |
-                msbuild -restore $(Build.SourcesDirectory)/{{projectName}}.Android/*.csproj -t:SignAndroidPackage -p:AndroidPackageFormat=apk -p:Configuration=$(buildConfiguration) -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(keyStore.secureFilePath) -p:AndroidSigningStorePass=$(keystore.password) -p:AndroidSigningKeyAlias=$(keystore.alias) -p:AndroidSigningKeyPass=$(keystore.aliasPassword)
-          
+                msbuild -restore $(Build.SourcesDirectory)/{{projectName}}.Android/*.csproj -t:SignAndroidPackage -p:AndroidPackageFormat={{#if useAab}}aab{{else}}apk{{/if}} -p:Configuration=$(buildConfiguration) -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(keyStore.secureFilePath) -p:AndroidSigningStorePass=$(keystore.password) -p:AndroidSigningKeyAlias=$(keystore.alias) -p:AndroidSigningKeyPass=$(keystore.aliasPassword)
+
           {{#if generateArtifacts}}
           - task: CopyFiles@2
             displayName: 'Copy deliverables'
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.Android/bin/$(buildConfiguration)'
-              Contents: '*Signed.apk'
+              Contents: {{#if useAab}}'*Signed.aab'{{else}}'*Signed.apk'{{/if}}
               TargetFolder: 'drop/$(buildConfiguration)_android'
 
           - task: PublishBuildArtifacts@1
@@ -303,7 +303,16 @@ stages:
               buildType: 'current'
               downloadType: 'specific'
               downloadPath: 'releases_drop'
+          {{#if useAab}}    
+          - task: DownloadSecureFile@1
+            name: keyStore
+            displayName: "Download keystore from secure files"
+            inputs:
+              secureFile: '$(keystore)'
 
+          // TODO add extensions
+         
+          {{else}}
           - task: AppCenterDistribute@3
             displayName: 'Distribute to Visual Studio App Center'
             inputs:
@@ -314,6 +323,9 @@ stages:
               releaseNotesInput: 'New Version'
               destinationType: 'groups'
               distributionGroupId: '$(androidDistributionGroupId)'
+          {{#/if}}
+
+
 
   - stage: Distribute_iOS
     dependsOn: Build_Xamarin_iOS
