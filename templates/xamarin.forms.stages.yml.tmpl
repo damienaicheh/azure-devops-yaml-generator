@@ -2,6 +2,8 @@
 # A complete series on how to manage your Xamarin Forms application using Azure DevOps is available here:
 # https://damienaicheh.github.io/xamarin/azure/devops/2020/02/27/run-unit-tests-using-xamarin-and-azure-devops-en.html
 
+# Change the vmImage option as you need.
+
 {{#if updateIdentifier}}
 # You need to install this set of extensions to update your identifiers:
 # https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
@@ -36,6 +38,18 @@
 # https://damienaicheh.github.io/azure/devops/appcenter/2019/11/10/setup-azure-devops-and-appcenter-to-deploy-your-application-en.html
 {{/if}}
 
+{{#if useAab}}
+# If you want to generate an universal apk for App Center from your Android App Bundle you will need to install this extension:
+# https://marketplace.visualstudio.com/items?itemName=DamienAicheh.bundletool-tasks
+# Also to use the InstallBundletool task you need to setup a simple github access token to automatically get the latest version of bundletool.
+# Here are the list of the variables you need to add to the secure group:
+# - username
+# - githubPersonnalAccessToken
+
+# A tutorial about this is available here:
+# https://damienaicheh.github.io/xamarin/azure/devops/2020/05/05/universal-apk-from-aab-with-azure-devops-en.html
+{{/if}}
+
 trigger: none
 
 pool:
@@ -44,7 +58,7 @@ pool:
 variables:
   - group: secret
   - name: xamarinSdkVersion
-    value: '6_6_0'
+    value: '6_8_0'
   - name: solutionPath
     value: '**/*.sln'
   - name: buildConfiguration
@@ -303,6 +317,7 @@ stages:
               buildType: 'current'
               downloadType: 'specific'
               downloadPath: 'releases_drop'
+              
           {{#if useAab}}    
           - task: DownloadSecureFile@1
             name: keyStore
@@ -310,8 +325,31 @@ stages:
             inputs:
               secureFile: '$(keystore)'
 
-          // TODO add extensions
-         
+          - task: InstallBundletool@1
+            inputs:
+              username: '$(username)'
+              personalAccessToken: '$(githubPersonnalAccessToken)'
+
+          - task: AabConvertToUniversalApk@1
+            inputs:
+              aabFilePath: 'releases_drop/$(buildConfiguration)_android/*.aab'
+              keystoreFilePath: '$(keyStore.secureFilePath)'
+              keystorePassword: '$(keystore.password)'
+              keystoreAlias: '$(keystore.alias)'
+              keystoreAliasPassword: '$(keystore.aliasPassword)'
+              outputFolder: 'releases_drop/$(buildConfiguration)_android/tmp'
+
+          - task: AppCenterDistribute@3
+            displayName: 'Distribute to Visual Studio App Center'
+            inputs:
+              serverEndpoint: '$(serverEndpoint)'
+              appSlug: '$(androidAppSlug)'
+              appFile: 'releases_drop/$(buildConfiguration)_android/tmp/*.apk'
+              releaseNotesOption: 'input'
+              releaseNotesInput: 'New Version'
+              destinationType: 'groups'
+              distributionGroupId: '$(androidDistributionGroupId)'
+
           {{else}}
           - task: AppCenterDistribute@3
             displayName: 'Distribute to Visual Studio App Center'
@@ -323,7 +361,7 @@ stages:
               releaseNotesInput: 'New Version'
               destinationType: 'groups'
               distributionGroupId: '$(androidDistributionGroupId)'
-          {{#/if}}
+          {{/if}}
 
 
 

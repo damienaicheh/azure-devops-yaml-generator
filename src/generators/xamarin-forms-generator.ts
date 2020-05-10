@@ -6,6 +6,7 @@ export class XamarinFormsGenerator extends YamlGenerator {
     constructor() {
         super();
         this.template = 'xamarin.forms.stages.yml.tmpl';
+        this.vmImage = 'macOS-latest';
         this.steps = this.steps.concat([
             input => steps.enableUnitTests(this, input),
             input => steps.androidPackageType(this, input),
