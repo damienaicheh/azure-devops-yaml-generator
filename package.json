@@ -2,7 +2,7 @@
 	"name": "azure-pipeline-yaml-generator",
 	"displayName": "Azure Pipeline YAML Generator",
 	"description": "",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"publisher": "damienaicheh",
 	"license": "LICENSE.md",
 	"repository": {
