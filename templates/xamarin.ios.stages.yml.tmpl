@@ -2,6 +2,7 @@
 # A quick tutorial on how to build, sign and deploy your Xamarin.iOS application using Azure DevOps and App Center is available here:
 # https://damienaicheh.github.io/xamarin/azure/devops/appcenter/2019/11/14/build-sign-and-deploy-your-xamarin-ios-application-using-azure-devops-and-appcenter-en.html
  
+# Change the vmImage option as you need.
 
 {{#if updateIdentifier}}
 # You need to install this set of extensions to update your identifiers:
@@ -38,7 +39,7 @@ pool:
 variables:
   - group: secret
   - name: xamarinSdkVersion
-    value: '6_6_0'
+    value: '6_8_0'
   - name: solutionPath
     value: '**/*.sln'
   - name: buildConfiguration
@@ -118,7 +119,7 @@ stages:
           {{#if updateIdentifier}}
           - task: ios-bundle-identifier@1
             inputs:
-              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}/Info.plist'
               bundleIdentifier: '$(bundleIdentifier)'
               bundleName: '$(bundleName)'
               bundleDisplayName: '$(bundleDisplayName)'
@@ -130,11 +131,11 @@ stages:
 
           - task: UpdateiOSVersionInfoPlist@1
             inputs:
-              infoPlistPath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'   
+              infoPlistPath: '$(Build.SourcesDirectory)/{{projectName}}/Info.plist'   
           {{else}}
           - task: ios-bundle-version@1
             inputs:
-              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Info.plist'
+              sourcePath: '$(Build.SourcesDirectory)/{{projectName}}/Info.plist'
               versionCodeOption: 'buildid'
               versionCode: '$(Build.BuildId)'
               versionCodeOffset: '$(versionCodeOffset)'
@@ -145,7 +146,7 @@ stages:
           {{#if launchIconBadge}}
           - task: LaunchIconBadge@1
             inputs:
-              sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/Assets.xcassets/AppIcon.appiconset'
+              sourceFolder: '$(Build.SourcesDirectory)/{{projectName}}/Assets.xcassets/AppIcon.appiconset'
               contents: '**/*.png'
               bannerVersionNamePosition: 'bottomRight'
               bannerVersionNameText: '$(buildConfiguration)'
@@ -182,7 +183,7 @@ stages:
           - task: CopyFiles@2
             displayName: 'Copy deliverables'
             inputs:
-              SourceFolder: '$(Build.SourcesDirectory)/{{projectName}}.iOS/bin/iPhone/$(buildConfiguration)'
+              SourceFolder: '$(Build.SourcesDirectory)/{{projectName}}/bin/iPhone/$(buildConfiguration)'
               Contents: '*.ipa'
               TargetFolder: 'drop/$(buildConfiguration)_ios'
 
