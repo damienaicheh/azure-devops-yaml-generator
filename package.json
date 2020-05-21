@@ -41,6 +41,11 @@
 				"command": "azure-pipeline-yaml-generator.ios",
 				"title": "iOS template",
 				"category": "Azure Pipeline YAML Generator"
+			},
+			{
+				"command": "azure-pipeline-yaml-generator.android",
+				"title": "Android template",
+				"category": "Azure Pipeline YAML Generator"
 			}
 		]
 	},

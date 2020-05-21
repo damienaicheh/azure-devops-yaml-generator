@@ -1,0 +1,170 @@
+# This template was generated with the VS Code extension Azure Pipeline YAML Generator
+# A quick tutorial on how to build and sign your Android application using Azure DevOps is available here:
+# https://damienaicheh.github.io/azure/devops/2019/06/13/how-to-build-and-sign-your-android-application-using-azure-devops-en
+
+# Change the vmImage option as you need.
+
+{{#if updateIdentifier}}
+# You need to install this set of extensions to update your identifiers:
+# https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks
+{{/if}}
+{{#if automaticVersion}}
+# You need to install this set of extensions to automatically manage the version of your application:
+# https://marketplace.visualstudio.com/items?itemName=DamienAicheh.mobile-versioning-task
+{{else}}
+# You need to install a set of extensions to manually manage the version of your application:
+# https://marketplace.visualstudio.com/items?itemName=vs-publisher-473885.motz-mobile-buildtasks       
+{{/if}}
+{{#if launchIconBadge}}
+# You need to install this extension to add a banner to your launch icon:
+# https://marketplace.visualstudio.com/items?itemName=DamienAicheh.launch-icon-task
+{{/if}}
+ 
+# Update all the variables just below.
+# Assuming you will create a secret group to store all your secure keys and password here are the list of all the variables you need to add:
+# - keystore
+# - keystore.password
+# - keystore.alias
+# - keystore.aliasPassword
+
+{{#if distribute}}   
+# A quick tutorial to setup Azure DevOps and App Center to deploy your application is available here:
+# https://damienaicheh.github.io/azure/devops/appcenter/2019/11/10/setup-azure-devops-and-appcenter-to-deploy-your-application-en.html
+{{/if}}
+
+trigger: none
+
+pool:
+  vmImage: {{vmImage}}
+
+variables:
+  - group: secret
+  - name: buildConfiguration
+    value: 'release'
+  {{#if updateIdentifier}}
+  - name: packageName
+    value: ''
+  - name: appLabel
+    value: ''
+  {{/if}}
+  {{#unless automaticVersion}}
+  - name: versionName
+    value: '1.0'
+  - name: versionCodeOffset
+    value: '0'
+  {{/unless}}
+  {{#if distribute}}   
+  - name: serverEndpoint # Visual Studio App Center endpoint
+    value: ''
+  - name: appSlug
+    value: ''
+  - name: distributionGroupId
+    value: ''
+  {{/if}}
+
+stages:
+  - stage: Build_Android
+    jobs:
+      - job:
+        displayName: 'Build Android'
+        workspace:
+          clean: all
+        steps:
+          - task: Gradle@2
+            inputs:
+              workingDirectory: '$(Build.SourcesDirectory)'
+              gradleWrapperFile: 'gradlew'
+              gradleOptions: '-Xmx3072m'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.8'
+              jdkArchitectureOption: 'x64'
+              publishJUnitResults: false
+              testResultsFiles: '**/TEST-*.xml'
+              tasks: 'assemble$(buildConfiguration)'
+          
+          {{#if updateIdentifier}}
+          - task: android-manifest-package-name@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/app/src/main/AndroidManifest.xml'
+              packageName: '$(packageName)'
+              appLabel: '$(appLabel)'
+              printFile: true
+          {{/if}}
+
+          {{#if automaticVersion}}
+          - task: ExtractVersionFromTag@1
+
+          - task: UpdateAndroidVersionManifest@1
+            inputs:
+              androidManifestPath: '$(Build.SourcesDirectory)/app/src/main/AndroidManifest.xml'
+          {{else}}
+          - task: android-manifest-version@1
+            inputs:
+              sourcePath: '$(Build.SourcesDirectory)/app/src/main/AndroidManifest.xml'
+              versionCodeOption: 'buildid'
+              versionCode: '$(Build.BuildId)'
+              versionCodeOffset: $(versionCodeOffset)
+              versionName: '$(versionName).$(Build.BuildId)'
+              printFile: true
+          {{/if}}
+          
+          {{#if launchIconBadge}}
+          - task: LaunchIconBadge@1
+            inputs:
+              sourceFolder: '$(Build.SourcesDirectory)/app/src/main/res'
+              contents: '**/ic_launcher.png'
+              bannerVersionNamePosition: 'bottomRight'
+              bannerVersionNameText: '$(buildConfiguration)'
+          {{/if}}
+
+          - task: AndroidSigning@3
+            inputs:
+              apkFiles: '**/*.apk' 
+              apksign: true
+              apksignerKeystoreFile: '$(keystore)'
+              apksignerKeystorePassword: '$(keystore.password)'
+              apksignerKeystoreAlias: '$(keystore.alias)'
+              apksignerKeyPassword: '$(keystore.aliasPassword)'
+              apksignerArguments: --out $(Build.SourcesDirectory)/app.release.apk
+              zipalign: true
+
+          {{#if generateArtifacts}}
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: $(Build.SourcesDirectory)
+              contents: 'app.release.apk' 
+              targetFolder: 'drop/$(buildConfiguration)_android'
+              overWrite: true
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathtoPublish: 'drop/$(buildConfiguration)_android'
+              artifactName: '$(buildConfiguration)_android'
+              publishLocation: 'container'
+          {{/if}}
+  
+  {{#if distribute}}        
+  - stage: Distribute_Android
+    dependsOn: Build_Android
+    jobs:
+      - job:
+        displayName: 'Distribute Android'
+        steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'specific'
+              downloadPath: 'releases_drop'
+
+          - task: AppCenterDistribute@3
+            displayName: 'Distribute to Visual Studio App Center'
+            inputs:
+              serverEndpoint: '$(serverEndpoint)'
+              appSlug: '$(appSlug)'
+              appFile: 'releases_drop/$(buildConfiguration)_android/*.apk'
+              releaseNotesOption: 'input'
+              releaseNotesInput: 'New Version'
+              destinationType: 'groups'
+              distributionGroupId: '$(distributionGroupId)'
+  {{/if}}
