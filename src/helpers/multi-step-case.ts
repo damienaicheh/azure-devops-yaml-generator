@@ -1,4 +1,4 @@
-import { window, commands, workspace, ExtensionContext, QuickPickItem, Disposable, CancellationToken, QuickInputButton, QuickInput, QuickInputButtons, Uri } from 'vscode';
+import { window, QuickPickItem, Disposable, QuickInputButton, QuickInput, QuickInputButtons } from 'vscode';
 
 // -------------------------------------------------------
 // Helper code that wraps the API for the multi-step case.
@@ -40,12 +40,12 @@ export class MultiStepInput {
     private current?: QuickInput;
     private steps: InputStep[] = [];
 
-    static async runAll<T>(steps: InputStep[]) {
+    static async runAll(steps: InputStep[]) {
         const input = new MultiStepInput();
         return input.allStepThrough(steps);
     }
 
-    private async allStepThrough<T>(entries: InputStep[]) {
+    private async allStepThrough(entries: InputStep[]) {
         var index = 0;
         let step: InputStep | void = entries[0];
         while (index < entries.length) {
@@ -55,7 +55,7 @@ export class MultiStepInput {
                 this.current.busy = true;
             }
             try {
-                step = await entries[index](this); //step(this);
+                step = await entries[index](this);
                 index++;
             } catch (err) {
                 if (err === InputFlowAction.back) {

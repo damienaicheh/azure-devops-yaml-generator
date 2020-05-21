@@ -1,8 +1,8 @@
-import { workspace, ExtensionContext, window } from 'vscode';
+import { workspace, ExtensionContext } from 'vscode';
+import { InputStep, MultiStepInput } from '../helpers/multi-step-case';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
-import { FileHelper } from '../helpers/file-helper';
-import { InputStep, MultiStepInput } from '../helpers/multi-step-case';
+import * as FileHelper from '../helpers/file-helper';
 import *  as steps from "./steps";
 
 /**
