@@ -1,4 +1,4 @@
-import { window } from 'vscode';
+import { window, workspace } from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -25,5 +25,15 @@ export class FileHelper {
 
             window.showInformationMessage(successMessage);
         });
+    }
+
+    static async openUntitledTab(content: string, successMessage: string, language: string = 'yaml') {
+        const document = await workspace.openTextDocument({
+            language,
+            content,
+        });
+
+        window.showTextDocument(document);
+        window.showInformationMessage(successMessage);
     }
 }

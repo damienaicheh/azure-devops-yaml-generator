@@ -1,4 +1,4 @@
-import { workspace, ExtensionContext, Uri } from 'vscode';
+import { workspace, ExtensionContext, window } from 'vscode';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
 import { FileHelper } from '../helpers/file-helper';
@@ -45,8 +45,6 @@ export class YamlGenerator {
     async generate(context: ExtensionContext) {
         await MultiStepInput.runAll(this.steps);
 
-        const folderPath = workspace.rootPath ?? '';
-
         var templatePath = path.join(context.extensionPath, `/templates/${this.template}`);
 
         var source = await FileHelper.readFileAsync(templatePath);
@@ -55,7 +53,12 @@ export class YamlGenerator {
 
         var result = template(this);
 
-        FileHelper.createFile(folderPath, this.fileName, result, 'Generation done', 'Failed to create file');
-    }
+        const folderPath = workspace.rootPath ?? undefined;
 
+        if (folderPath) {
+            FileHelper.createFile(folderPath, this.fileName, result, 'Generation done', 'Failed to create file');
+        } else {
+            await FileHelper.openUntitledTab(result, 'Generation done');
+        }
+    }
 }

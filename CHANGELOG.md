@@ -1,12 +1,5 @@
 # Change Log
 
-## Known Issues
-
-- Back button increase the total steps number.
-- You need to open a folder to let the extension save the file in it.
-
-## Released
-
 ### 0.0.3
 Supports added for:
 - Xamarin.iOS templates

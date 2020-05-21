@@ -65,7 +65,7 @@ export async function inputText(generator: YamlGenerator, input: MultiStepInput,
         prompt: prompt,
         validate: validate,
         shouldResume: shouldResume
-    });
+    }, () => backStep(generator));
 
     generator.currentStep++;
 
@@ -82,9 +82,14 @@ export async function booleanPicker(generator: YamlGenerator, input: MultiStepIn
         totalSteps: generator.steps.length,
         items: answers,
         shouldResume: shouldResume
-    });
+    }, () => backStep(generator));
 
     generator.currentStep++;
 
     return pick.label === yesOption;
+}
+
+// Back button action detected
+function backStep(generator: YamlGenerator): void {
+    generator.currentStep--;
 }

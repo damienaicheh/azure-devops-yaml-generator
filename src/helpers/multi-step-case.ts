@@ -77,7 +77,7 @@ export class MultiStepInput {
         }
     }
 
-    async showQuickPick<T extends QuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItem, placeholder, buttons, shouldResume }: P) {
+    async showQuickPick<T extends QuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItem, placeholder, buttons, shouldResume }: P, back: () => void) {
         const disposables: Disposable[] = [];
         try {
             return await new Promise<T | (P extends { buttons: (infer I)[] } ? I : never)>((resolve, reject) => {
@@ -100,6 +100,7 @@ export class MultiStepInput {
                 disposables.push(
                     input.onDidTriggerButton(item => {
                         if (item === QuickInputButtons.Back) {
+                            back();
                             reject(InputFlowAction.back);
                         } else {
                             resolve(<any>item);
@@ -126,7 +127,7 @@ export class MultiStepInput {
         }
     }
 
-    async showInputBox<P extends InputBoxParameters>({ title, step, totalSteps, value, prompt, validate, buttons, shouldResume }: P) {
+    async showInputBox<P extends InputBoxParameters>({ title, step, totalSteps, value, prompt, validate, buttons, shouldResume }: P, back: () => void) {
         const disposables: Disposable[] = [];
         try {
             return await new Promise<string | (P extends { buttons: (infer I)[] } ? I : never)>((resolve, reject) => {
@@ -144,6 +145,7 @@ export class MultiStepInput {
                 disposables.push(
                     input.onDidTriggerButton(item => {
                         if (item === QuickInputButtons.Back) {
+                            back();
                             reject(InputFlowAction.back);
                         } else {
                             resolve(<any>item);
