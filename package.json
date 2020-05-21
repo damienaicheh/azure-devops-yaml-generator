@@ -2,12 +2,12 @@
 	"name": "azure-pipeline-yaml-generator",
 	"displayName": "Azure Pipeline YAML Generator",
 	"description": "",
-	"version": "0.0.3",
+	"version": "1.0.0",
 	"publisher": "damienaicheh",
 	"license": "LICENSE.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com"
+		"url": "https://github.com/damienaicheh/azure-devops-yaml-generator"
 	},
 	"icon": "icon.png",
 	"engines": {

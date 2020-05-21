@@ -1,5 +1,16 @@
 # Change Log
 
+### 1.0.0
+Stable version.
+
+Supports added for:
+- iOS templates
+- Android templates
+
+Fix issues:
+- Back button increase the current steps number.
+- A folder project was needed to display the file generated.
+
 ### 0.0.3
 Supports added for:
 - Xamarin.iOS templates
