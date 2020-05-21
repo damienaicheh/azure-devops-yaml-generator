@@ -2,11 +2,13 @@ import { commands, ExtensionContext, window } from 'vscode';
 import { XamarinFormsGenerator } from './generators/xamarin-forms-generator';
 import { XamariniOSGenerator } from './generators/xamarin-ios-generator';
 import { XamarinAndroidGenerator } from './generators/xamarin-android-generator';
+import { IOSGenerator } from './generators/ios-generator';
 
 enum Keys {
 	XamarinForms = 'xamarin.forms',
 	XamariniOS = 'xamarin.ios',
 	XamarinAndroid = 'xamarin.android',
+	IOS = 'ios',
 	UWP = 'uwp'
 }
 
@@ -25,8 +27,8 @@ export function activate(context: ExtensionContext) {
 		bootstrap(Keys.XamarinAndroid, context);
 	});
 
-	commands.registerCommand(`azure-pipeline-yaml-generator.${Keys.UWP}`, async () => {
-		bootstrap(Keys.UWP, context);
+	commands.registerCommand(`azure-pipeline-yaml-generator.${Keys.IOS}`, async () => {
+		bootstrap(Keys.IOS, context);
 	});
 
 	//context.subscriptions.push(disposable);
@@ -47,6 +49,9 @@ async function bootstrap(key: string, context: ExtensionContext) {
 			break;
 		case Keys.XamarinAndroid:
 			generator = new XamarinAndroidGenerator();
+			break;
+		case Keys.IOS:
+			generator = new IOSGenerator();
 			break;
 		case Keys.UWP:
 			window.showInformationMessage("Not implemented yet");
