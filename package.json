@@ -19,7 +19,7 @@
 	"activationEvents": [
 		"*"
 	],
-	"main": "./out/extension.js",
+	"main": "./dist/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -50,25 +50,36 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
-		"lint": "eslint src --ext ts",
-		"watch": "tsc -watch -p ./",
 		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/test/runTest.js"
+		"vscode:prepublish": "webpack --mode production",
+		"lint": "eslint ./src --ext .js,.ts",
+		"lint-fix": "eslint ./src --ext .js,.ts --fix",
+		"webpack": "webpack --mode none",
+		"watch": "webpack --mode none --watch",
+		"pretty": "npx prettier@2 src/. --write",
+		"just-test": "node ./out/test/runTest.js",
+		"just-live-share-test": "node out/live-share/test/runTest.js",
+		"test-compile": "tsc -p ./ && npm run webpack",
+		"test": "npm run test-compile && npm run just-test",
+		"test-all": "npm run test && npm run just-live-share-test",
+		"test:coverage": "npm run just-test -- --coverage"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.44.0",
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.11.0",
-		"eslint": "^6.8.0",
-		"@typescript-eslint/parser": "^2.26.0",
+		"@types/vscode": "^1.44.0",
 		"@typescript-eslint/eslint-plugin": "^2.26.0",
+		"@typescript-eslint/parser": "^2.26.0",
+		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
 		"mocha": "^7.1.1",
+		"ts-loader": "^5.3.3",
 		"typescript": "^3.8.3",
-		"vscode-test": "^1.3.0"
+		"vscode-test": "^1.3.0",
+		"webpack": "^4.42.1",
+		"webpack-cli": "^3.3.11"
 	},
 	"dependencies": {
 		"fs": "0.0.1-security",

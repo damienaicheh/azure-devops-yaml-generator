@@ -1,2 +1,3 @@
 npm install &&
-vscode-nls-dev
+npm run test-compile &&
+vsce package
