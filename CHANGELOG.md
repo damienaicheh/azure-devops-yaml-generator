@@ -1,5 +1,9 @@
 # Change Log
 
+### 1.0.1
+
+Update all packages to fix dependencies with new security issues.
+
 ### 1.0.0
 Stable version.
 
